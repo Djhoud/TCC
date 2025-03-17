@@ -1,7 +1,7 @@
 import React from "react";
-import { View, StyleSheet } from "react-native";
+import { StyleSheet, View } from "react-native";
 import CloudBackground from "../components/CloudBackground";
-import LoginScreen from "../screens/LoginScreen"; 
+import LoginScreen from "../screens/LoginScreen.js";
 
 export default function App() {
   return (

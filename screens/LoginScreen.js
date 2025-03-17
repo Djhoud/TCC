@@ -1,11 +1,11 @@
-import { StyleSheet, TextInput, TouchableOpacity, Text, View } from "react-native";
+import { StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 
 export default function LoginScreen() {
   return (
     <View style={styles.container}>
       {}
       <View style={styles.topArea}>
-        <Text style={styles.welcomeText}>Bem-vndo</Text> {}
+        <Text style={styles.welcomeText}>Entrar</Text> {}
       </View>
 
       {}
@@ -18,8 +18,7 @@ export default function LoginScreen() {
         </TouchableOpacity>
         
         <TouchableOpacity>
-          <Text style={styles.link}>
-            Não tem conta? <Text style={styles.linkBold}>Cadastre-se</Text>
+          <Text style={styles.link}> <Text style={styles.linkBold}>Cadastre-se</Text>
           </Text>
         </TouchableOpacity>
       </View>
@@ -33,17 +32,17 @@ const styles = StyleSheet.create({
     backgroundColor: "#0000", 
   },
   topArea: {
-    height: "60%", 
+    height: "50%", 
     justifyContent: "center", 
     alignItems: "center", 
   },
   welcomeText: {
-    fontSize: 35, 
+    fontSize: 70, 
     fontWeight: "bold", 
     color: "#ffff", 
   },
   content: {
-    height: "60%", 
+    height: "50%", 
     backgroundColor: "#fff", 
     borderTopLeftRadius: 0, 
     borderTopRightRadius: 0, 
@@ -52,7 +51,7 @@ const styles = StyleSheet.create({
     alignItems: "center", 
   },
   input: {
-    width: "360%", 
+    width: "350%", 
     height: 80,
     backgroundColor: "#F2F2F2", 
     borderRadius: 8,
@@ -61,7 +60,7 @@ const styles = StyleSheet.create({
   },
   button: {
     marginTop: 40,
-    backgroundColor: "#007AFF",
+    backgroundColor: "#1D4780",
     padding: 15,
     borderRadius: 15,
     alignItems: "center",
@@ -76,6 +75,7 @@ const styles = StyleSheet.create({
     color: "#007AFF",
     marginTop: 30,
     fontSize: 15,
+    flexShrink: 1
   },
   linkBold: {
     fontWeight: "bold",
