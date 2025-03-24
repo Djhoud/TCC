@@ -1,13 +1,14 @@
 import React from "react";
 import { StyleSheet, View } from "react-native";
-import CloudBackground from "../components/CloudBackground";
-import LoginScreen from "../screens/LoginScreen.js";
+import "react-native-gesture-handler";
+import AppNavigator from "../Navi/AppNavigator"; // Navegação
 
 export default function App() {
   return (
     <View style={styles.container}>
-      <CloudBackground /> {}
-      <LoginScreen /> {}
+      <View style={styles.overlay}>
+        <AppNavigator />
+      </View>
     </View>
   );
 }
@@ -15,8 +16,8 @@ export default function App() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "#3A8FFF", 
+  },
+  overlay: {
+    ...StyleSheet.absoluteFillObject, // Ocupa toda a tela sem quebrar a hierarquia
   },
 });

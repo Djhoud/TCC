@@ -1,67 +1,74 @@
 import { FontAwesome } from '@expo/vector-icons';
+import { useNavigation } from "@react-navigation/native";
 import { StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
+import CloudBackground from "../components/CloudBackground"; // Importando as nuvens
 
 export default function LoginScreen() {
-  return (
-    <View style={styles.container}>
-      <View style={styles.topArea}>
-        <Text style={styles.welcomeText}>Entrar</Text>
-      </View>
+    const navigation = useNavigation();
 
-      <View style={styles.content}>
-        <TextInput placeholder="Email" style={styles.input} placeholderTextColor="#666" />
-        <TextInput placeholder="Senha" secureTextEntry style={styles.input} placeholderTextColor="#666" />
-
-        <TouchableOpacity style={{ alignSelf: "flex-end", marginBottom: 20 }}>
-  <Text style={{ color: "#007AFF", fontSize: 15 }}>Esqueceu sua senha?</Text>
-</TouchableOpacity>
-
-
+    return (
+      <View style={styles.container}>
+        <CloudBackground /> {/* Renderizando o fundo com nuvens */}
         
-        <TouchableOpacity style={styles.button}>
-          <Text style={styles.buttonText}>Entrar</Text>
-        </TouchableOpacity>
-        
-        <TouchableOpacity>
-          <Text style={styles.link}><Text style={styles.linkBold}>Cadastre-se</Text></Text>
-        </TouchableOpacity>
+        <View style={styles.topArea}>
+          <Text style={styles.welcomeText}>Entrar</Text>
+        </View>
 
-        <View style={styles.socialButtonsContainer}>
-          <TouchableOpacity style={[styles.socialButton, styles.google]}>
-            <FontAwesome name="google" size={24} color="white" />
+        <View style={styles.content}>
+          <TextInput placeholder="Email" style={styles.input} placeholderTextColor="#666" />
+          <TextInput placeholder="Senha" secureTextEntry style={styles.input} placeholderTextColor="#666" />
+
+          <TouchableOpacity style={{ alignSelf: "flex-end", marginBottom: 20 }}>
+            <Text style={{ color: "#007AFF", fontSize: 15 }}>Esqueceu sua senha?</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={[styles.socialButton, styles.facebook]}>
-            <FontAwesome name="facebook" size={24} color="white" />
+
+          <TouchableOpacity style={styles.button} onPress={() => navigation.navigate("Home")}>
+            <Text style={styles.buttonText}>Entrar</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={[styles.socialButton, styles.twitter]}>
-            <FontAwesome name="twitter" size={24} color="white" />
+          
+          <TouchableOpacity>
+            <Text style={styles.link}><Text style={styles.linkBold}>Cadastre-se</Text></Text>
           </TouchableOpacity>
+
+          <View style={styles.socialButtonsContainer}>
+            <TouchableOpacity style={[styles.socialButton, styles.google]}>
+              <FontAwesome name="google" size={24} color="white" />
+            </TouchableOpacity>
+            <TouchableOpacity style={[styles.socialButton, styles.facebook]}>
+              <FontAwesome name="facebook" size={24} color="white" />
+            </TouchableOpacity>
+            <TouchableOpacity style={[styles.socialButton, styles.twitter]}>
+              <FontAwesome name="twitter" size={24} color="white" />
+            </TouchableOpacity>
+          </View>
         </View>
       </View>
-    </View>
-  );
+    );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#0000",
   },
   topArea: {
-    height: "43%",
+    height: "43%", 
     justifyContent: "center",
     alignItems: "center",
+    backgroundColor: "#3A8FFF",
   },
   welcomeText: {
     fontSize: 70,
     fontWeight: "bold",
-    color: "#ffff",
+    color: "#fff",
   },
   content: {
-    height: "100%",
+    height: "57%",
     backgroundColor: "#fff",
-    paddingHorizontal: 160,
+    paddingHorizontal: 40,
     alignItems: "center",
+    justifyContent: "center",
+    zIndex: 2,
+    paddingTop: 15,
   },
   input: {
     width: 320,
@@ -69,9 +76,9 @@ const styles = StyleSheet.create({
     backgroundColor: "#FFFFFF",
     borderRadius: 8,
     paddingHorizontal: 15,
-    marginBottom: 15,
     borderColor: "#323D4D",
     borderWidth: 0.5,
+    marginTop: 5,
   },
   button: {
     marginTop: 40,
@@ -99,8 +106,6 @@ const styles = StyleSheet.create({
     marginTop: 20,
     gap: 10,
   },
-  
-  
   socialButton: {
     width: 60,
     height: 50,
