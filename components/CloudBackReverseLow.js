@@ -48,24 +48,25 @@ const styles = StyleSheet.create({
     opacity: 0.6,
   },
 // Linha de cima - Nuvens normais
-cloud1: { top: 380, left: -140 },
-cloud2: { top: 378, left: -40 },
-cloud3: { top: 385, left: 60 },
-cloud4: { top: 380, left: 160 },
+// Linha de cima - Nuvens normais
+cloud1: { top: 371, left: -140 },
+cloud2: { top: 369, left: -40 },
+cloud3: { top: 376, left: 60 },
+cloud4: { top: 371, left: 160 },
 
 // Novas Nuvens - Linha de cima
-cloud9: { top: 375, left: 280 },
-cloud10: { top: 385, left: 380 },
+cloud9: { top: 366, left: 280 },
+cloud10: { top: 376, left: 380 },
 
 // Linha de baixo - Nuvens opacas (levemente abaixo)
-cloud5: { top: 400, left: -120 },
-cloud6: { top: 400, left: -20 },
-cloud7: { top: 410, left: 80 },
-cloud8: { top: 395, left: 180 },
+cloud5: { top: 391, left: -120 },
+cloud6: { top: 391, left: -20 },
+cloud7: { top: 401, left: 80 },
+cloud8: { top: 386, left: 180 },
 
 // Novas Nuvens - Linha de baixo
-cloud11: { top: 405, left: 260 },
-cloud12: { top: 410, left: 340 },
+cloud11: { top: 396, left: 260 },
+cloud12: { top: 401, left: 340 },
 
   // Estilo para girar as nuvens "nuvem2" de ponta cabeça
   rotated: {
