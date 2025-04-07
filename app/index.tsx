@@ -1,7 +1,7 @@
 import React from "react";
 import { StyleSheet, View } from "react-native";
 import "react-native-gesture-handler";
-import AppNavigator from "../Navi/AppNavigator"; // Navegação
+import AppNavigator from "../Navi/AppNavigator";
 
 export default function App() {
   return (
@@ -18,6 +18,6 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   overlay: {
-    ...StyleSheet.absoluteFillObject, // Ocupa toda a tela sem quebrar a hierarquia
+    ...StyleSheet.absoluteFillObject,
   },
 });

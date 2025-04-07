@@ -5,19 +5,19 @@ export default function CloudBackground() {
     <View style={styles.container}>
       {/* Nuvem 1 */}
       <Image
-        source={require("../assets/images/nuvem.png")}
+        source={require("../assets/images/component/nuvem.png")}
         style={[styles.cloud, styles.cloud1]}
       />
       
       {/* Nuvem 2 */}
       <Image
-        source={require("../assets/images/nuvem.png")}
+        source={require("../assets/images/component/nuvem.png")}
         style={[styles.cloud, styles.cloud2]}
       />
       
       {/* Nuvem 3 */}
       <Image
-        source={require("../assets/images/nuvem.png")}
+        source={require("../assets/images/component/nuvem.png")}
         style={[styles.cloud, styles.cloud3]}
       />
     </View>
