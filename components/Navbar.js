@@ -1,21 +1,24 @@
+import { useNavigation } from "@react-navigation/native";
 import { Image, StyleSheet, TouchableOpacity, View } from "react-native";
 
 export default function Navbar() {
+  const navigation = useNavigation();
+
   return (
     <View style={styles.navbar}>
-      <TouchableOpacity>
+      <TouchableOpacity onPress={() => navigation.navigate("Budget")}>
         <Image source={require("../assets/images/icons/airplane.png")} style={styles.navIcon} />
       </TouchableOpacity>
-      <TouchableOpacity>
+      <TouchableOpacity onPress={() => navigation.navigate("Search")}>
         <Image source={require("../assets/images/icons/search.png")} style={styles.navIcon} />
       </TouchableOpacity>
-      <TouchableOpacity>
+      <TouchableOpacity onPress={() => navigation.navigate("Home")}>
         <Image source={require("../assets/images/icons/home.png")} style={styles.navIcon} />
       </TouchableOpacity>
-      <TouchableOpacity>
+      <TouchableOpacity onPress={() => navigation.navigate("Coffee")}>
         <Image source={require("../assets/images/icons/coffee.png")} style={styles.navIcon} />
       </TouchableOpacity>
-      <TouchableOpacity>
+      <TouchableOpacity onPress={() => navigation.navigate("User")}>
         <Image source={require("../assets/images/icons/user.png")} style={styles.navIcon} />
       </TouchableOpacity>
     </View>

@@ -30,9 +30,10 @@ export default function MainScreen() {
 
       <View style={styles.topArea}>
         <Text style={styles.title}>Sua viagem do seu jeito!</Text>
-        <TouchableOpacity style={styles.button}>
-          <Text style={styles.buttonText}>SUA VIAGEM!</Text>
-        </TouchableOpacity>
+        <TouchableOpacity style={styles.button} onPress={() => navigation.navigate("Budget")}>
+  <Text style={styles.buttonText}>SUA VIAGEM!</Text>
+</TouchableOpacity>
+
       </View>
 
       <View style={styles.bottomArea}>

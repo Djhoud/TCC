@@ -40,16 +40,16 @@ const styles = StyleSheet.create({
     opacity: 1,
   },
   cloud1: {
-    top: 190, // Ajuste a posição da primeira nuvem (valor em pixels)
+    top: 270, // Ajuste a posição da primeira nuvem (valor em pixels)
     left: -50, // Ajuste a posição da primeira nuvem (valor em pixels)
   },
   cloud2: {
-    top: 200, // Ajuste a posição da segunda nuvem (valor em pixels)
+    top: 280, // Ajuste a posição da segunda nuvem (valor em pixels)
     right: -80,
     transform: [{ rotate: "155deg" }],  // Ajuste a posição da segunda nuvem (valor em pixels)
   },
   cloud3: {
-    top: 200, // Ajuste a posição da terceira nuvem (valor em pixels)
+    top: 290, // Ajuste a posição da terceira nuvem (valor em pixels)
     left: 115, // Ajuste a posição da terceira nuvem (valor em pixels)
   },
   
