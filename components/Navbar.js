@@ -12,7 +12,7 @@ export default function Navbar() {
       <TouchableOpacity onPress={() => navigation.navigate("Search")}>
         <Image source={require("../assets/images/icons/search.png")} style={styles.navIcon} />
       </TouchableOpacity>
-      <TouchableOpacity onPress={() => navigation.navigate("Home")}>
+      <TouchableOpacity onPress={() => navigation.navigate("Main")}>
         <Image source={require("../assets/images/icons/home.png")} style={styles.navIcon} />
       </TouchableOpacity>
       <TouchableOpacity onPress={() => navigation.navigate("Coffee")}>

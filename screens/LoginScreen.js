@@ -22,7 +22,7 @@ export default function LoginScreen() {
             <Text style={{ color: "#007AFF", fontSize: 15 }}>Esqueceu sua senha?</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.button} onPress={() => navigation.navigate("Home")}>
+          <TouchableOpacity style={styles.button} onPress={() => navigation.navigate("Preference")}>
             <Text style={styles.buttonText}>Entrar</Text>
           </TouchableOpacity>
           
