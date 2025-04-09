@@ -49,7 +49,7 @@ export default function TravelBudgetScreen() {
           <View style={styles.inputGroup}>
             <Text style={styles.label}>Destino</Text>
             <TextInput
-              style={styles.input}
+                style={styles.searchInput}
               placeholder="Digite o destino"
               value={destination}
               onChangeText={text => {
@@ -159,8 +159,8 @@ const styles = StyleSheet.create({
     marginVertical: 5,
   },
   input: {
-    width: 180,
-    height: 40,
+    width: 145,
+    height: 53,
     borderWidth: 1,
     borderColor: "#ccc",
     borderRadius: 8,
@@ -168,6 +168,17 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
     marginVertical: 5,
   },
+  searchInput: {
+    width: 322, // ou maior, tipo 200 ou 220 se quiser bem longo
+    height: 53,
+    borderWidth: 1,
+    borderColor: "#ccc",
+    borderRadius: 8,
+    textAlign: "center",
+    backgroundColor: "#fff",
+    marginVertical: 5,
+  },
+  
   suggestionsBox: {
     position: "absolute",
     top: 75, // ajuste esse valor conforme o layout do input
@@ -195,7 +206,7 @@ const styles = StyleSheet.create({
   },
 
   sliderWrapper: {
-    marginTop: 20,
+    marginTop: 5,
     width: "90%",
   },
 
@@ -205,10 +216,10 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingVertical: 20,
     paddingBottom: 100,
-    paddingTop:90,
+    paddingTop:70,
   },
   destinationImage: {
-    width: "90%",
+    width: "80%",
     height: 180,
     borderRadius: 10,
     marginBottom: 15,
@@ -216,21 +227,31 @@ const styles = StyleSheet.create({
   buttonContainer: {
     flexDirection: "row",
     justifyContent: "space-between",
-    width: "80%",
+    width: "70%",
+    height: 40,
     marginTop: 10,
+    
   },
   buttonText: {
     color: "#fff",
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: "bold",
   },
   editButton: {
     backgroundColor: "#2E72CC",
     paddingVertical: 10,
+    width:95,
+    height:50,
     paddingHorizontal: 20,
     borderRadius: 8,
+    justifyContent:"center",
+    alignItems: "center"
   },
   confirmButton: {
+    width:95,
+    height:50,
+    justifyContent:"center",
+    alignItems: "center",
     backgroundColor: "#1A5FB4",
     paddingVertical: 10,
     paddingHorizontal: 20,
