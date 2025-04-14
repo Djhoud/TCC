@@ -1,4 +1,5 @@
 import SearchScreen from "@/screens/SearchScreen";
+import SplashScreen from "@/screens/SplashScreen";
 import { NavigationContainer } from "@react-navigation/native";
 import { createStackNavigator } from "@react-navigation/stack";
 import CoffeeScreen from "../screens/CoffeeScreen";
@@ -13,7 +14,12 @@ const Stack = createStackNavigator();
 export default function AppNavigator() {
   return (
     <NavigationContainer>
-      <Stack.Navigator initialRouteName="User"> 
+      <Stack.Navigator initialRouteName="Splash"> 
+        <Stack.Screen
+          name="Splash"
+          component={SplashScreen}
+          options={{ headerShown: false }}
+        />
         <Stack.Screen
           name="Login"
           component={LoginScreen}

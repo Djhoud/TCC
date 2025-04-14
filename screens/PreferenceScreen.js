@@ -18,7 +18,7 @@ export default function PreferenceScreen() {
     {
       title: "Qual seus tipos de comidas favoritas?",
       field: "food_preferences",
-      options: ["japonesa", "italiana", "brasileira", "francesa", "mexicana", "indiana"],
+      options: ["Japonesa", "Italiana", "Brasileira", "Francesa", "Mexicana", "Indiana"],
     },
     {
       title: "Qual tipo de acomodação você prefere?",

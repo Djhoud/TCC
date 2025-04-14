@@ -23,7 +23,7 @@ export default function ProfileScreen() {
 
       <View style={styles.bottomArea}>
       <LabeledInput label="Nome" value={user.name} />
-        <LabeledInput label="Email" value={user.email} />
+        <LabeledInput label="E-mail" value={user.email} />
         <LabeledInput label="Senha" value={user.password} secureTextEntry />
         <LabeledInput label="CPF" value={user.cpf} />
 
@@ -32,7 +32,7 @@ export default function ProfileScreen() {
         </TouchableOpacity>
       </View>
 
-      <Navbar />
+     <Navbar style={styles.navbar} />
     </View>
   );
 }
@@ -120,5 +120,11 @@ const styles = StyleSheet.create({
     color: "#2E72CC",
     fontWeight: "bold",
     fontSize: 16,
+  },
+  navbar: {
+    position: "absolute",
+    bottom: 0,
+    width: "100%",
+
   },
 });

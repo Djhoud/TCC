@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import {
   Image,
+  Platform,
   StyleSheet,
   Text,
   TextInput,
@@ -8,11 +9,11 @@ import {
   View
 } from "react-native";
 
+import DateTimePicker from "@react-native-community/datetimepicker";
+
 import CloudBackReverseLow from "@/components/CloudBackReverseLow";
 import BudgetSlider from "../components/BudgetSlider";
 import Navbar from "../components/Navbar";
-
-
 
 export default function TravelBudgetScreen() {
   const [destination, setDestination] = useState("");
@@ -21,11 +22,11 @@ export default function TravelBudgetScreen() {
   const [children, setChildren] = useState(0);
   const [dateIn, setDateIn] = useState("05/09/24");
   const [dateOut, setDateOut] = useState("05/09/24");
+  const [showDateInPicker, setShowDateInPicker] = useState(false);
+  const [showDateOutPicker, setShowDateOutPicker] = useState(false);
 
   const destinations = ["Rio de Janeiro", "São Paulo", "Salvador", "Florianópolis", "Porto Alegre"];
-
   const [showSuggestions, setShowSuggestions] = useState(false);
-
 
   const getDestinationImage = (destination) => {
     const images = {
@@ -38,71 +39,95 @@ export default function TravelBudgetScreen() {
     return images[destination] || require("../assets/images/component/default.png");
   };
 
+  const formatDate = (date) => {
+    return date.toLocaleDateString("pt-BR");
+  };
+
+  
   return (
     <View style={styles.container}>
       <CloudBackReverseLow style={styles.cloudBackground} />
 
-   
-        {/* TOPO - FORMULÁRIO */}
-        <View style={styles.formWrapper}>
-          {/* DESTINO */}
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Destino</Text>
-            <TextInput
-                style={styles.searchInput}
-              placeholder="Digite o destino"
-              value={destination}
-              onChangeText={text => {
-                setDestination(text);
-                setShowSuggestions(true); // mostra o dropdown
-              }}
-            />
-           {destination !== "" && showSuggestions && (
-
-              <View style={styles.suggestionsBox}>
-                {destinations
-                  .filter(d => d.toLowerCase().includes(destination.toLowerCase()))
-                  .map((d, index) => (
-                    <TouchableOpacity key={index} onPress={() => {
-                      setDestination(d);
-                      // esconde as sugestões
-                      setShowSuggestions(false);
-                    }}>
-                      <Text style={styles.suggestion}>{d}</Text>
-                    </TouchableOpacity>
-                    
-                ))}
-              </View>
-            )}
-          </View>
-
-          {/* DATAS */}
-          <View style={styles.row}>
-            <InputBox label="Entrada" value={dateIn} onChangeText={setDateIn} />
-            <InputBox label="Saída" value={dateOut} onChangeText={setDateOut} />
-          </View>
-
-          {/* PESSOAS */}
-          <View style={styles.row}>
-            <InputBox label="Adultos" value={String(adults)} onChangeText={text => setAdults(Number(text))} keyboardType="numeric" />
-            <InputBox label="Crianças" value={String(children)} onChangeText={text => setChildren(Number(text))} keyboardType="numeric" />
-          </View>
-
-          {/* SLIDER */}
-          <View style={styles.sliderWrapper}>
-            <BudgetSlider budget={budget} setBudget={setBudget} />
-          </View>
+      {/* TOPO - FORMULÁRIO */}
+      <View style={styles.formWrapper}>
+        {/* DESTINO */}
+        <View style={styles.inputGroup}>
+          <Text style={styles.label}>Destino</Text>
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Digite o destino"
+            value={destination}
+            onChangeText={text => {
+              setDestination(text);
+              setShowSuggestions(true);
+            }}
+          />
+          {destination !== "" && showSuggestions && (
+            <View style={styles.suggestionsBox}>
+              {destinations
+                .filter(d => d.toLowerCase().includes(destination.toLowerCase()))
+                .map((d, index) => (
+                  <TouchableOpacity key={index} onPress={() => {
+                    setDestination(d);
+                    setShowSuggestions(false);
+                  }}>
+                    <Text style={styles.suggestion}>{d}</Text>
+                  </TouchableOpacity>
+              ))}
+            </View>
+          )}
         </View>
 
-        {/* IMAGEM E BOTÕES */}
-        <View style={styles.imageAndButtonWrapper}>
-          <Image source={getDestinationImage(destination)} style={styles.destinationImage} />
-          <View style={styles.buttonContainer}>
-            <Button text="Editar" style={styles.editButton} />
-            <Button text="Concluir" style={styles.confirmButton} />
-          </View>
+        {/* DATAS */}
+        <View style={styles.row}>
+          <DateInputBox label="Entrada" value={dateIn} onPress={() => setShowDateInPicker(true)} />
+          <DateInputBox label="Saída" value={dateOut} onPress={() => setShowDateOutPicker(true)} />
         </View>
 
+        {/* PESSOAS */}
+        <View style={styles.row}>
+          <InputBox label="Adultos" value={String(adults)} onChangeText={text => setAdults(Number(text))} keyboardType="numeric" />
+          <InputBox label="Crianças" value={String(children)} onChangeText={text => setChildren(Number(text))} keyboardType="numeric" />
+        </View>
+
+        {/* SLIDER */}
+        <View style={styles.sliderWrapper}>
+          <BudgetSlider budget={budget} setBudget={setBudget} />
+        </View>
+      </View>
+
+      {/* IMAGEM E BOTÕES */}
+      <View style={styles.imageAndButtonWrapper}>
+        <Image source={getDestinationImage(destination)} style={styles.destinationImage} />
+        <View style={styles.buttonContainer}>
+          <Button text="Editar" style={styles.editButton} />
+          <Button text="Concluir" style={styles.confirmButton} />
+        </View>
+      </View>
+
+      {/* PICKERS */}
+      {showDateInPicker && (
+        <DateTimePicker
+          value={new Date()}
+          mode="date"
+          display={Platform.OS === "ios" ? "spinner" : "default"}
+          onChange={(event, selectedDate) => {
+            setShowDateInPicker(false);
+            if (selectedDate) setDateIn(formatDate(selectedDate));
+          }}
+        />
+      )}
+      {showDateOutPicker && (
+        <DateTimePicker
+          value={new Date()}
+          mode="date"
+          display={Platform.OS === "ios" ? "spinner" : "default"}
+          onChange={(event, selectedDate) => {
+            setShowDateOutPicker(false);
+            if (selectedDate) setDateOut(formatDate(selectedDate));
+          }}
+        />
+      )}
 
       <Navbar style={styles.navbar} />
     </View>
@@ -117,11 +142,21 @@ const InputBox = ({ label, value, onChangeText, keyboardType }) => (
   </View>
 );
 
+const DateInputBox = ({ label, value, onPress }) => (
+  <View style={styles.box}>
+    <Text style={styles.label}>{label}</Text>
+    <TouchableOpacity onPress={onPress}>
+      <TextInput style={styles.input} value={value} editable={false} pointerEvents="none" />
+    </TouchableOpacity>
+  </View>
+);
+
 const Button = ({ text, style }) => (
   <TouchableOpacity style={style}>
     <Text style={styles.buttonText}>{text}</Text>
   </TouchableOpacity>
 );
+
 
 // ESTILOS
 const styles = StyleSheet.create({
@@ -238,7 +273,9 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
   },
   editButton: {
-    backgroundColor: "#2E72CC",
+    backgroundColor: "#3A8FFF",
+    borderWidth:0.5,
+    borderColor: "#fff",
     paddingVertical: 10,
     width:95,
     height:50,
@@ -256,6 +293,7 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     paddingHorizontal: 20,
     borderRadius: 8,
+    elevation: 3,
   },
   navbar: {
     position: "absolute",
