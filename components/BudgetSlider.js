@@ -5,19 +5,18 @@ import { StyleSheet, Text, View } from "react-native";
 export default function BudgetSlider({ budget, setBudget }) {
   return (
     <View style={styles.sliderContainer}>
-     <Text style={styles.label}>Orçamento</Text>
-<Text style={styles.budgetText}>R${budget}</Text>
-<Slider
-  style={styles.slider}
-  minimumValue={0}
-  maximumValue={5000}
-  step={100}
-  value={budget}
-  onValueChange={setBudget}
-  minimumTrackTintColor="#3A8FFF"
-  maximumTrackTintColor="#ccc"
-/>
-
+      <Text style={styles.label}>Orçamento</Text>
+      <Text style={styles.budgetText}>R${budget}</Text>
+      <Slider
+        style={styles.slider}
+        minimumValue={0}
+        maximumValue={5000}
+        step={100}
+        value={budget}
+        onValueChange={setBudget}
+        minimumTrackTintColor="#3A8FFF"
+        maximumTrackTintColor="#ccc"
+      />
     </View>
   );
 }

@@ -6,12 +6,10 @@ export default function TravelCard({ travel }) {
   return (
     <View style={styles.card}>
       <Image source={{ uri: travel.image }} style={styles.image} />
-
       <View style={styles.info}>
         <Text style={styles.title}>{travel.title}</Text>
         <Text style={styles.detail}>📍 {travel.location}</Text>
         <Text style={styles.detail}>📅 {travel.date}</Text>
-
         <View style={styles.stars}>
           {[...Array(5)].map((_, i) => (
             <FontAwesome

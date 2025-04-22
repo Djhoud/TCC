@@ -4,46 +4,60 @@ import { StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-nativ
 import CloudBackground from "../components/CloudBackground"; // Importando as nuvens
 
 export default function LoginScreen() {
-    const navigation = useNavigation();
+  const navigation = useNavigation();
 
-    return (
-      <View style={styles.container}>
-        <CloudBackground /> {/* Renderizando o fundo com nuvens */}
-        
-        <View style={styles.topArea}>
-          <Text style={styles.welcomeText}>Entrar</Text>
-        </View>
+  return (
+    <View style={styles.container}>
+      <CloudBackground /> {/* Renderizando o fundo com nuvens */}
 
-        <View style={styles.content}>
-          <TextInput placeholder="Email" style={styles.input} placeholderTextColor="#666" />
-          <TextInput placeholder="Senha" secureTextEntry style={styles.input} placeholderTextColor="#666" />
+      <View style={styles.topArea}>
+        <Text style={styles.welcomeText}>Entrar</Text>
+      </View>
 
-          <TouchableOpacity style={{ alignSelf: "flex-end", marginBottom: 20 }}>
-            <Text style={{ color: "#007AFF", fontSize: 15 }}>Esqueceu sua senha?</Text>
+      <View style={styles.content}>
+        <TextInput 
+          placeholder="Email" 
+          style={styles.input} 
+          placeholderTextColor="#666" 
+        />
+        <TextInput 
+          placeholder="Senha" 
+          secureTextEntry 
+          style={styles.input} 
+          placeholderTextColor="#666" 
+        />
+
+        <TouchableOpacity style={{ alignSelf: "flex-end", marginBottom: 20 }}>
+          <Text style={{ color: "#007AFF", fontSize: 15 }}>Esqueceu sua senha?</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity 
+          style={styles.button} 
+          onPress={() => navigation.navigate("Preference")}
+        >
+          <Text style={styles.buttonText}>Entrar</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity>
+          <Text style={styles.link}>
+            <Text style={styles.linkBold}>Cadastre-se</Text>
+          </Text>
+        </TouchableOpacity>
+
+        <View style={styles.socialButtonsContainer}>
+          <TouchableOpacity style={[styles.socialButton, styles.google]}>
+            <FontAwesome name="google" size={24} color="white" />
           </TouchableOpacity>
-
-          <TouchableOpacity style={styles.button} onPress={() => navigation.navigate("Preference")}>
-            <Text style={styles.buttonText}>Entrar</Text>
+          <TouchableOpacity style={[styles.socialButton, styles.facebook]}>
+            <FontAwesome name="facebook" size={24} color="white" />
           </TouchableOpacity>
-          
-          <TouchableOpacity>
-            <Text style={styles.link}><Text style={styles.linkBold}>Cadastre-se</Text></Text>
+          <TouchableOpacity style={[styles.socialButton, styles.twitter]}>
+            <FontAwesome name="twitter" size={24} color="white" />
           </TouchableOpacity>
-
-          <View style={styles.socialButtonsContainer}>
-            <TouchableOpacity style={[styles.socialButton, styles.google]}>
-              <FontAwesome name="google" size={24} color="white" />
-            </TouchableOpacity>
-            <TouchableOpacity style={[styles.socialButton, styles.facebook]}>
-              <FontAwesome name="facebook" size={24} color="white" />
-            </TouchableOpacity>
-            <TouchableOpacity style={[styles.socialButton, styles.twitter]}>
-              <FontAwesome name="twitter" size={24} color="white" />
-            </TouchableOpacity>
-          </View>
         </View>
       </View>
-    );
+    </View>
+  );
 }
 
 const styles = StyleSheet.create({

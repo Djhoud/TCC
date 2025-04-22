@@ -8,7 +8,6 @@ const SplashScreen = ({ navigation }) => {
   const fadeAnim = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
-    // Aguardar 1.5s antes de iniciar a animação
     const delayBeforeSlide = setTimeout(() => {
       Animated.timing(slideAnim, {
         toValue: -height,
@@ -17,8 +16,7 @@ const SplashScreen = ({ navigation }) => {
       }).start();
     }, 1500);
 
-    // Transição para login após a animação
-    const totalSplashTime = 1500 + 2000 + 300; // 1.5s parada + 2s animação + 0.3s de margem
+    const totalSplashTime = 1500 + 2000 + 300;
     const transitionTimeout = setTimeout(() => {
       Animated.timing(fadeAnim, {
         toValue: 0,
@@ -42,21 +40,36 @@ const SplashScreen = ({ navigation }) => {
           resizeMode="contain"
         />
       </View>
-
       <Animated.View
         style={[
           styles.bottomSection,
-          {
-            transform: [{ translateY: slideAnim }],
-          },
+          { transform: [{ translateY: slideAnim }] },
         ]}
       >
-        <Image source={require("../assets/images/component/nuvem.png")} style={styles.cloud1} />
-        <Image source={require("../assets/images/component/nuvem2.png")} style={styles.cloud4} />
-        <Image source={require("../assets/images/component/nuvem2.png")} style={styles.cloud5} />
-        <Image source={require("../assets/images/component/nuvem.png")} style={styles.cloud6} />
-        <Image source={require("../assets/images/component/nuvem.png")} style={styles.cloud7} />
-        <Image source={require("../assets/images/component/nuvem2.png")} style={styles.cloud9} />
+        <Image
+          source={require("../assets/images/component/nuvem.png")}
+          style={styles.cloud1}
+        />
+        <Image
+          source={require("../assets/images/component/nuvem2.png")}
+          style={styles.cloud4}
+        />
+        <Image
+          source={require("../assets/images/component/nuvem2.png")}
+          style={styles.cloud5}
+        />
+        <Image
+          source={require("../assets/images/component/nuvem.png")}
+          style={styles.cloud6}
+        />
+        <Image
+          source={require("../assets/images/component/nuvem.png")}
+          style={styles.cloud7}
+        />
+        <Image
+          source={require("../assets/images/component/nuvem2.png")}
+          style={styles.cloud9}
+        />
       </Animated.View>
     </Animated.View>
   );
@@ -86,12 +99,50 @@ const styles = StyleSheet.create({
     width: 300,
     height: 300,
   },
-  cloud1: { position: "absolute", top: -120, left: -50, width: 200, height: 200, transform: [{ rotate: "60deg" }] },
-  cloud4: { position: "absolute", top: -130, left: 310, width: 200, height: 200, transform: [{ rotate: "310deg" }] },
-  cloud5: { position: "absolute", top: -70, left: 40, width: 160, height: 160 },
-  cloud6: { position: "absolute", top: -60, left: 140, width: 200, height: 200 },
-  cloud7: { position: "absolute", top: -100, left: 260, width: 200, height: 200 },
-  cloud9: { position: "absolute", top: -60, left: 100, width: 100, height: 100 },
+  cloud1: {
+    position: "absolute",
+    top: -120,
+    left: -50,
+    width: 200,
+    height: 200,
+    transform: [{ rotate: "60deg" }],
+  },
+  cloud4: {
+    position: "absolute",
+    top: -130,
+    left: 310,
+    width: 200,
+    height: 200,
+    transform: [{ rotate: "310deg" }],
+  },
+  cloud5: {
+    position: "absolute",
+    top: -70,
+    left: 40,
+    width: 160,
+    height: 160,
+  },
+  cloud6: {
+    position: "absolute",
+    top: -60,
+    left: 140,
+    width: 200,
+    height: 200,
+  },
+  cloud7: {
+    position: "absolute",
+    top: -100,
+    left: 260,
+    width: 200,
+    height: 200,
+  },
+  cloud9: {
+    position: "absolute",
+    top: -60,
+    left: 100,
+    width: 100,
+    height: 100,
+  },
 });
 
 export default SplashScreen;

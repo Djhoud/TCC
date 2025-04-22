@@ -7,7 +7,7 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  View,
+  View
 } from "react-native";
 import CloudBackground from "../components/CloudBackground";
 import Navbar from "../components/Navbar";
@@ -21,10 +21,9 @@ export default function ProfileScreen() {
     email: "Usuario_01@gmail.com",
     password: "12********",
     cpf: "24834512177",
-    photo: "https://i.pravatar.cc/150?img=12",
+    photo: "https://i.pravatar.cc/150?img=12"
   };
 
-  // Viagens mockadas
   const travels = [
     {
       id: "1",
@@ -32,7 +31,7 @@ export default function ProfileScreen() {
       location: "Rio de Janeiro",
       date: "24/12/2024",
       stars: 4,
-      image: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e",
+      image: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e"
     },
     {
       id: "2",
@@ -40,7 +39,7 @@ export default function ProfileScreen() {
       location: "Chapada Diamantina",
       date: "10/01/2025",
       stars: 5,
-      image: "https://images.unsplash.com/photo-1605032652768-f63f57c31e06",
+      image: "https://images.unsplash.com/photo-1605032652768-f63f57c31e06"
     },
     {
       id: "3",
@@ -48,7 +47,7 @@ export default function ProfileScreen() {
       location: "Gramado",
       date: "14/07/2025",
       stars: 3,
-      image: "https://images.unsplash.com/photo-1551907234-70d4fa7c39aa",
+      image: "https://images.unsplash.com/photo-1551907234-70d4fa7c39aa"
     },
     {
       id: "4",
@@ -56,7 +55,7 @@ export default function ProfileScreen() {
       location: "Patagônia",
       date: "05/08/2025",
       stars: 5,
-      image: "https://images.unsplash.com/photo-1549887534-2c5b05fe7082",
+      image: "https://images.unsplash.com/photo-1549887534-2c5b05fe7082"
     },
     {
       id: "5",
@@ -64,8 +63,8 @@ export default function ProfileScreen() {
       location: "Jalapão",
       date: "22/09/2025",
       stars: 4,
-      image: "https://images.unsplash.com/photo-1583241951264-fd3ee67f72ec",
-    },
+      image: "https://images.unsplash.com/photo-1583241951264-fd3ee67f72ec"
+    }
   ];
 
   const pages = [
@@ -77,12 +76,11 @@ export default function ProfileScreen() {
           <LabeledInput label="E-mail" value={user.email} />
           <LabeledInput label="Senha" value={user.password} secureTextEntry />
           <LabeledInput label="CPF" value={user.cpf} />
-
           <TouchableOpacity style={styles.button}>
             <Text style={styles.buttonText}>Editar</Text>
           </TouchableOpacity>
         </>
-      ),
+      )
     },
     {
       key: "2",
@@ -98,37 +96,30 @@ export default function ProfileScreen() {
           contentContainerStyle={{
             paddingBottom: 50,
             paddingTop: 10,
-            gap: 10,
+            gap: 10
           }}
           showsVerticalScrollIndicator={false}
         />
-      ),
+      )
     }
   ];
 
   return (
     <View style={styles.container}>
       <CloudBackground />
-
       <View style={styles.topArea}>
         <Image source={{ uri: user.photo }} style={styles.avatar} />
         <Text style={styles.title}>{user.name}</Text>
       </View>
-
       <FlatList
         data={pages}
         horizontal
         pagingEnabled
         showsHorizontalScrollIndicator={false}
         keyExtractor={(item) => item.key}
-        renderItem={({ item }) => (
-          <View style={styles.page}>
-            {item.content}
-          </View>
-        )}
+        renderItem={({ item }) => <View style={styles.page}>{item.content}</View>}
         style={styles.bottomArea}
       />
-
       <Navbar style={styles.navbar} />
     </View>
   );
@@ -151,7 +142,7 @@ function LabeledInput({ label, value, secureTextEntry = false }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#fff",
+    backgroundColor: "#fff"
   },
   topArea: {
     height: "40%",
@@ -159,38 +150,38 @@ const styles = StyleSheet.create({
     alignItems: "center",
     backgroundColor: "#3A8FFF",
     paddingTop: 40,
-    zIndex: 0,
+    zIndex: 0
   },
   title: {
     fontSize: 28,
     fontWeight: "bold",
     color: "#fff",
-    marginTop: 15,
+    marginTop: 15
   },
   avatar: {
     width: 160,
     height: 160,
     borderRadius: 100,
     borderWidth: 3,
-    borderColor: "#fff",
+    borderColor: "#fff"
   },
   bottomArea: {
     flexGrow: 0,
     height: "55%",
-    zIndex: 1,
+    zIndex: 1
   },
   page: {
     width: width,
     backgroundColor: "#fff",
     padding: 25,
     borderTopLeftRadius: 30,
-    borderTopRightRadius: 30,
+    borderTopRightRadius: 30
   },
   label: {
     fontWeight: "600",
     color: "#3C3C3C",
     marginBottom: 5,
-    marginLeft: 30,
+    marginLeft: 30
   },
   input: {
     backgroundColor: "#fff",
@@ -202,7 +193,7 @@ const styles = StyleSheet.create({
     alignSelf: "center",
     fontSize: 16,
     color: "#3C3C3C",
-    borderWidth: 0.5,
+    borderWidth: 0.5
   },
   button: {
     marginTop: 2,
@@ -214,16 +205,16 @@ const styles = StyleSheet.create({
     borderWidth: 0.5,
     borderColor: "#2E72CC",
     alignItems: "center",
-    alignSelf: "center",
+    alignSelf: "center"
   },
   buttonText: {
     color: "#2E72CC",
     fontWeight: "bold",
-    fontSize: 16,
+    fontSize: 16
   },
   navbar: {
     position: "absolute",
     bottom: 0,
-    width: "100%",
-  },
+    width: "100%"
+  }
 });

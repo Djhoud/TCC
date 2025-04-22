@@ -70,13 +70,11 @@ export default function PreferenceScreen() {
   return (
     <View style={styles.container}>
       <CloudBackReverse />
-
       <View style={styles.topArea}>
         <Text style={styles.title}>{steps[currentStep].title}</Text>
       </View>
 
       <View style={styles.bottomArea}>
-        {/* Indicadores de etapa */}
         <View style={styles.stepsContainer}>
           {steps.map((_, index) => (
             <View
@@ -89,7 +87,6 @@ export default function PreferenceScreen() {
           ))}
         </View>
 
-        {/* Lista de opções */}
         <FlatList
           data={steps[currentStep].options}
           numColumns={2}
@@ -100,8 +97,7 @@ export default function PreferenceScreen() {
               onPress={() => handleSelect(item)}
               style={[
                 styles.option,
-                preferences[steps[currentStep].field].includes(item) &&
-                styles.selectedOption,
+                preferences[steps[currentStep].field].includes(item) && styles.selectedOption,
               ]}
             >
               <Text style={styles.optionText}>{item}</Text>

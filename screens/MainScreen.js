@@ -26,16 +26,13 @@ export default function MainScreen() {
 
   return (
     <View style={styles.container}>
-      <CloudBackReverse /> {/* Fundo com as nuvens */}
-
+      <CloudBackReverse />
       <View style={styles.topArea}>
         <Text style={styles.title}>Sua viagem do seu jeito!</Text>
         <TouchableOpacity style={styles.button} onPress={() => navigation.navigate("Budget")}>
   <Text style={styles.buttonText}>SUA VIAGEM!</Text>
   </TouchableOpacity>
-
       </View>
-
       <View style={styles.bottomArea}>
         <Text style={styles.sectionTitle}>PACOTES POPULARES</Text>
         <FlatList
@@ -53,7 +50,6 @@ export default function MainScreen() {
           )}
         />
       </View>
-      
       <Navbar />
     </View>
   );
