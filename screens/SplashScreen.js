@@ -1,71 +1,93 @@
 import React, { useEffect, useRef } from "react";
-import { Animated, Image, StyleSheet, View } from "react-native";
+import { Animated, Dimensions, Image, StyleSheet, View } from "react-native";
+
+const { height } = Dimensions.get("window");
 
 const SplashScreen = ({ navigation }) => {
-  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const slideAnim = useRef(new Animated.Value(0)).current;
+  const fadeAnim = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
-    Animated.timing(fadeAnim, {
-      toValue: 1,
-      duration: 1000,
-      useNativeDriver: true,
-    }).start();
+    // Aguardar 1.5s antes de iniciar a animação
+    const delayBeforeSlide = setTimeout(() => {
+      Animated.timing(slideAnim, {
+        toValue: -height,
+        duration: 2000,
+        useNativeDriver: true,
+      }).start();
+    }, 1500);
 
-    const timer = setTimeout(() => {
-      navigation.replace("Login");
-    }, 3000); // tempo longo pra você brincar
+    // Transição para login após a animação
+    const totalSplashTime = 1500 + 2000 + 300; // 1.5s parada + 2s animação + 0.3s de margem
+    const transitionTimeout = setTimeout(() => {
+      Animated.timing(fadeAnim, {
+        toValue: 0,
+        duration: 500,
+        useNativeDriver: true,
+      }).start(() => navigation.replace("Login"));
+    }, totalSplashTime);
 
-    return () => clearTimeout(timer);
+    return () => {
+      clearTimeout(delayBeforeSlide);
+      clearTimeout(transitionTimeout);
+    };
   }, []);
 
   return (
-    <View style={styles.container}>
-      {/* Parte azul com logo */}
+    <Animated.View style={[styles.container, { opacity: fadeAnim }]}>
       <View style={styles.topSection}>
-        <Animated.Image
+        <Image
           source={require("../assets/images/component/Logo_fundo_azul.png")}
-          style={[styles.logo, { opacity: fadeAnim }]}
+          style={styles.logo}
           resizeMode="contain"
         />
       </View>
 
-      {/* Parte branca com nuvens posicionadas manualmente */}
-      <View style={styles.bottomSection}>
+      <Animated.View
+        style={[
+          styles.bottomSection,
+          {
+            transform: [{ translateY: slideAnim }],
+          },
+        ]}
+      >
         <Image source={require("../assets/images/component/nuvem.png")} style={styles.cloud1} />
         <Image source={require("../assets/images/component/nuvem2.png")} style={styles.cloud4} />
         <Image source={require("../assets/images/component/nuvem2.png")} style={styles.cloud5} />
         <Image source={require("../assets/images/component/nuvem.png")} style={styles.cloud6} />
         <Image source={require("../assets/images/component/nuvem.png")} style={styles.cloud7} />
         <Image source={require("../assets/images/component/nuvem2.png")} style={styles.cloud9} />
-        
-      </View>
-    </View>
+      </Animated.View>
+    </Animated.View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: "#fff",
   },
   topSection: {
-    height:"57%",
+    height: "57%",
     backgroundColor: "#3A8FFF",
     justifyContent: "center",
     alignItems: "center",
+    zIndex: 1,
   },
   bottomSection: {
-    flex: 1,
-    backgroundColor: "#fff", 
-    zIndex:2,
+    position: "absolute",
+    top: height * 0.57,
+    height: height,
+    width: "100%",
+    backgroundColor: "#fff",
+    zIndex: 2,
   },
   logo: {
     width: 300,
     height: 300,
   },
-
-  // nuvens com estilos individuais
-  cloud1: { position: "absolute", top: -120, left: -50, width: 200, height: 200, transform: [{rotate:"60deg"}] },
-  cloud4: { position: "absolute", top: -130, left: 310, width: 200, height: 200,transform: [{rotate:"310deg"}] },
+  cloud1: { position: "absolute", top: -120, left: -50, width: 200, height: 200, transform: [{ rotate: "60deg" }] },
+  cloud4: { position: "absolute", top: -130, left: 310, width: 200, height: 200, transform: [{ rotate: "310deg" }] },
   cloud5: { position: "absolute", top: -70, left: 40, width: 160, height: 160 },
   cloud6: { position: "absolute", top: -60, left: 140, width: 200, height: 200 },
   cloud7: { position: "absolute", top: -100, left: 260, width: 200, height: 200 },

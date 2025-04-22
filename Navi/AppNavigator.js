@@ -14,47 +14,39 @@ const Stack = createStackNavigator();
 export default function AppNavigator() {
   return (
     <NavigationContainer>
-      <Stack.Navigator initialRouteName="Splash"> 
+      <Stack.Navigator initialRouteName="User"> 
         <Stack.Screen
           name="Splash"
           component={SplashScreen}
-          options={{ headerShown: false }}
-        />
+          options={{ headerShown: false }}/>
         <Stack.Screen
           name="Login"
           component={LoginScreen}
-          options={{ headerShown: false }}
-        />
+          options={{ headerShown: false }}/>
         <Stack.Screen
           name="Preference"
           component={PreferenceScreen}
-          options={{ headerShown: false }}
-        /> 
+          options={{ headerShown: false }}/> 
         <Stack.Screen
           name="Main"
           component={MainScreen}
-          options={{ headerShown: false }}
-        />
+          options={{ headerShown: false }}/>
         <Stack.Screen
           name="Budget"
           component={TravelBudgetScreen}
-          options={{ headerShown: false }}
-        />
+          options={{ headerShown: false }}/>
         <Stack.Screen
         name="Search"
         component={SearchScreen}
-        options={{ headerShown: false }}
-        />
+        options={{ headerShown: false }}/>
         <Stack.Screen
           name="Coffee"
           component={CoffeeScreen}
-          options={{ headerShown: false }}
-        />
+          options={{ headerShown: false }}/>
         <Stack.Screen
           name="User"
           component={UserScreen}
-          options={{ headerShown: false }}
-        />
+          options={{ headerShown: false }}/>
       </Stack.Navigator>
     </NavigationContainer>
   );
