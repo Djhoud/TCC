@@ -1,12 +1,17 @@
 // src/screens/CoffeeScreen.tsx
 import React from "react";
 import { StyleSheet, Text, View } from "react-native";
+import Navbar from "../components/Navbar";
+
 
 export default function CoffeeScreen() {
   return (
+
     <View style={styles.container}>
-      <Text style={styles.text}>Hora do café ☕</Text>
+      <Text style={styles.text}>Coffee Screen</Text>
+      <Navbar />
     </View>
+    
   );
 }
 

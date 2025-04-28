@@ -1,4 +1,6 @@
 import { FontAwesome } from '@expo/vector-icons';
+import React from "react";
+
 import { useNavigation } from "@react-navigation/native";
 import { StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import CloudBackground from "../components/CloudBackground"; // Importando as nuvens
@@ -8,12 +10,10 @@ export default function LoginScreen() {
 
   return (
     <View style={styles.container}>
-      <CloudBackground /> {/* Renderizando o fundo com nuvens */}
-
+      <CloudBackground /> 
       <View style={styles.topArea}>
         <Text style={styles.welcomeText}>Entrar</Text>
       </View>
-
       <View style={styles.content}>
         <TextInput 
           placeholder="Email" 
@@ -26,24 +26,20 @@ export default function LoginScreen() {
           style={styles.input} 
           placeholderTextColor="#666" 
         />
-
         <TouchableOpacity style={{ alignSelf: "flex-end", marginBottom: 20 }}>
           <Text style={{ color: "#007AFF", fontSize: 15 }}>Esqueceu sua senha?</Text>
         </TouchableOpacity>
-
         <TouchableOpacity 
-          style={styles.button} 
-          onPress={() => navigation.navigate("Preference")}
-        >
+        style={styles.button} 
+        onPress={() => 
+        navigation.navigate("Preference")}>
           <Text style={styles.buttonText}>Entrar</Text>
         </TouchableOpacity>
-
         <TouchableOpacity>
           <Text style={styles.link}>
             <Text style={styles.linkBold}>Cadastre-se</Text>
           </Text>
         </TouchableOpacity>
-
         <View style={styles.socialButtonsContainer}>
           <TouchableOpacity style={[styles.socialButton, styles.google]}>
             <FontAwesome name="google" size={24} color="white" />

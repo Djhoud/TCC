@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   Dimensions,
   FlatList,
@@ -9,6 +9,11 @@ import {
   TouchableOpacity,
   View
 } from "react-native";
+import florianopolis from "../assets/images/component/florianopolis.png";
+import gramado from "../assets/images/component/gramado.png";
+import rio from "../assets/images/component/rio.png";
+import salvador from "../assets/images/component/salvador.png";
+import saopaulo from "../assets/images/component/saopaulo.png";
 import CloudBackground from "../components/CloudBackground";
 import Navbar from "../components/Navbar";
 import TravelCard from "../components/TravelCard";
@@ -16,6 +21,8 @@ import TravelCard from "../components/TravelCard";
 const { width } = Dimensions.get("window");
 
 export default function ProfileScreen() {
+  const [searchQuery, setSearchQuery] = useState("");
+
   const user = {
     name: "Usuario_01",
     email: "Usuario_01@gmail.com",
@@ -31,7 +38,7 @@ export default function ProfileScreen() {
       location: "Rio de Janeiro",
       date: "24/12/2024",
       stars: 4,
-      image: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e"
+      image: rio
     },
     {
       id: "2",
@@ -39,7 +46,7 @@ export default function ProfileScreen() {
       location: "Chapada Diamantina",
       date: "10/01/2025",
       stars: 5,
-      image: "https://images.unsplash.com/photo-1605032652768-f63f57c31e06"
+      image: saopaulo
     },
     {
       id: "3",
@@ -47,7 +54,7 @@ export default function ProfileScreen() {
       location: "Gramado",
       date: "14/07/2025",
       stars: 3,
-      image: "https://images.unsplash.com/photo-1551907234-70d4fa7c39aa"
+      image: gramado
     },
     {
       id: "4",
@@ -55,7 +62,7 @@ export default function ProfileScreen() {
       location: "Patagônia",
       date: "05/08/2025",
       stars: 5,
-      image: "https://images.unsplash.com/photo-1549887534-2c5b05fe7082"
+      image: salvador
     },
     {
       id: "5",
@@ -63,7 +70,7 @@ export default function ProfileScreen() {
       location: "Jalapão",
       date: "22/09/2025",
       stars: 4,
-      image: "https://images.unsplash.com/photo-1583241951264-fd3ee67f72ec"
+      image: florianopolis
     }
   ];
 
@@ -85,22 +92,36 @@ export default function ProfileScreen() {
     {
       key: "2",
       content: (
-        <FlatList
-          data={travels}
-          keyExtractor={(item) => item.id}
-          renderItem={({ item }) => (
-            <TouchableOpacity>
-              <TravelCard travel={item} />
-            </TouchableOpacity>
-          )}
-          contentContainerStyle={{
-            paddingBottom: 50,
-            paddingTop: 10,
-            gap: 10
-          }}
-          showsVerticalScrollIndicator={false}
-        />
-      )
+        <View style={{ flex: 1, padding: 20 }}>
+          <TextInput
+            placeholder="Buscar viagens..."
+            placeholderTextColor="#888"
+            style={{
+              height: 50,
+              borderWidth: 1,
+              borderColor: "#ccc",
+              borderRadius: 10,
+              paddingHorizontal: 15,
+              marginBottom: 15,
+            }}
+            value={searchQuery}
+            onChangeText={(text) => setSearchQuery(text)}
+          />
+          <FlatList
+            data={travels.filter((t) =>
+              t.title.toLowerCase().includes(searchQuery.toLowerCase())
+            )}
+            keyExtractor={(item) => item.id}
+            renderItem={({ item }) => (
+              <TouchableOpacity>
+                <TravelCard travel={item} />
+              </TouchableOpacity>
+            )}
+            contentContainerStyle={{ gap: 12, paddingBottom: 100 }}
+            showsVerticalScrollIndicator={false}
+          />
+        </View>
+      ),
     }
   ];
 
@@ -212,9 +233,4 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     fontSize: 16
   },
-  navbar: {
-    position: "absolute",
-    bottom: 0,
-    width: "100%"
-  }
 });

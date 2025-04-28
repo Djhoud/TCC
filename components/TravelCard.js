@@ -5,22 +5,30 @@ import { Image, StyleSheet, Text, View } from "react-native";
 export default function TravelCard({ travel }) {
   return (
     <View style={styles.card}>
-      <Image source={{ uri: travel.image }} style={styles.image} />
+      {travel.image && (
+        <Image source={travel.image} style={styles.image} />
+      )}
       <View style={styles.info}>
         <Text style={styles.title}>{travel.title}</Text>
-        <Text style={styles.detail}>📍 {travel.location}</Text>
-        <Text style={styles.detail}>📅 {travel.date}</Text>
-        <View style={styles.stars}>
-          {[...Array(5)].map((_, i) => (
-            <FontAwesome
-              key={i}
-              name="star"
-              size={20}
-              color={i < travel.stars ? "#FFD700" : "#ccc"}
-              style={{ marginRight: 3 }}
-            />
-          ))}
-        </View>
+        {travel.location && (
+          <Text style={styles.detail}>📍 {travel.location}</Text>
+        )}
+        {travel.date && (
+          <Text style={styles.detail}>📅 {travel.date}</Text>
+        )}
+        {travel.stars !== undefined && (
+          <View style={styles.stars}>
+            {[...Array(5)].map((_, i) => (
+              <FontAwesome
+                key={i}
+                name="star"
+                size={20}
+                color={i < travel.stars ? "#FFD700" : "#ccc"}
+                style={{ marginRight: 3 }}
+              />
+            ))}
+          </View>
+        )}
       </View>
     </View>
   );
