@@ -1,20 +1,56 @@
 import DateTimePicker from "@react-native-community/datetimepicker";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
+  ActivityIndicator,
   Image,
   Platform,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
-  View
+  View,
 } from "react-native";
+
+import { useNavigation } from "@react-navigation/native"; // Mantenha esta importação
 
 import CloudBackReverseLow from "@/components/CloudBackReverseLow";
 import BudgetSlider from "../components/BudgetSlider";
 import Navbar from "../components/Navbar";
 
+const InputBox = ({ label, value, onChangeText, keyboardType }) => (
+  <View style={styles.box}>
+    <Text style={styles.label}>{label}</Text>
+    <TextInput
+      style={styles.input}
+      value={value}
+      onChangeText={onChangeText}
+      keyboardType={keyboardType}
+    />
+  </View>
+);
+
+const DateInputBox = ({ label, value, onPress }) => (
+  <View style={styles.box}>
+    <Text style={styles.label}>{label}</Text>
+    <TouchableOpacity onPress={onPress}>
+      <TextInput
+        style={styles.input}
+        value={value}
+        editable={false}
+        pointerEvents="none"
+      />
+    </TouchableOpacity>
+  </View>
+);
+
+const Button = ({ text, style, onPress }) => (
+  <TouchableOpacity style={style} onPress={onPress}>
+    <Text style={styles.buttonText}>{text}</Text>
+  </TouchableOpacity>
+);
+
 export default function TravelBudgetScreen() {
+  const navigation = useNavigation(); // Mantenha esta linha
   const [destination, setDestination] = useState("");
   const [budget, setBudget] = useState(500);
   const [adults, setAdults] = useState(1);
@@ -23,7 +59,9 @@ export default function TravelBudgetScreen() {
   const [dateOut, setDateOut] = useState("05/09/24");
   const [showDateInPicker, setShowDateInPicker] = useState(false);
   const [showDateOutPicker, setShowDateOutPicker] = useState(false);
-  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [showSuggestions, setShowSuggestions] = useState(false); // Mantenha este estado
+  const [packageDataToSend, setPackageDataToSend] = useState(null);
+  const [loadingNavigation, setLoadingNavigation] = useState(false);
 
   const destinations = [
     "Rio de Janeiro",
@@ -46,6 +84,28 @@ export default function TravelBudgetScreen() {
 
   const formatDate = (date) => {
     return date.toLocaleDateString("pt-BR");
+  };
+
+  useEffect(() => {
+    if (packageDataToSend) {
+      setLoadingNavigation(true);
+      navigation.navigate("Confirmation", { packageData: packageDataToSend });
+      setPackageDataToSend(null); // Limpa para evitar navegação repetida
+      setLoadingNavigation(false);
+    }
+  }, [packageDataToSend, navigation]);
+
+  const handleConcluir = () => {
+    const packageData = {
+      destination: destination,
+      departureDate: dateIn,
+      returnDate: dateOut,
+      adults: adults,
+      children: children,
+      budget: budget,
+      attractions: [], // Inicializa como um array vazio para evitar erro de map na ConfirmationScreen
+    };
+    setPackageDataToSend(packageData);
   };
 
   return (
@@ -107,7 +167,16 @@ export default function TravelBudgetScreen() {
         <Image source={getDestinationImage(destination)} style={styles.destinationImage} />
         <View style={styles.buttonContainer}>
           <Button text="Editar" style={styles.editButton} />
-          <Button text="Concluir" style={styles.confirmButton} />
+          <Button
+            text="Concluir"
+            style={styles.confirmButton}
+            onPress={handleConcluir}
+          />
+          {loadingNavigation && (
+            <View style={styles.loadingNavigation}>
+              <ActivityIndicator color="#fff" />
+            </View>
+          )}
         </View>
       </View>
       {showDateInPicker && (
@@ -136,38 +205,6 @@ export default function TravelBudgetScreen() {
     </View>
   );
 }
-
-const InputBox = ({ label, value, onChangeText, keyboardType }) => (
-  <View style={styles.box}>
-    <Text style={styles.label}>{label}</Text>
-    <TextInput
-      style={styles.input}
-      value={value}
-      onChangeText={onChangeText}
-      keyboardType={keyboardType}
-    />
-  </View>
-);
-
-const DateInputBox = ({ label, value, onPress }) => (
-  <View style={styles.box}>
-    <Text style={styles.label}>{label}</Text>
-    <TouchableOpacity onPress={onPress}>
-      <TextInput
-        style={styles.input}
-        value={value}
-        editable={false}
-        pointerEvents="none"
-      />
-    </TouchableOpacity>
-  </View>
-);
-
-const Button = ({ text, style }) => (
-  <TouchableOpacity style={style}>
-    <Text style={styles.buttonText}>{text}</Text>
-  </TouchableOpacity>
-);
 
 const styles = StyleSheet.create({
   container: {
@@ -252,7 +289,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingVertical: 20,
     paddingBottom: 100,
-    paddingTop: 70
+    paddingTop: 70,
+    position: "relative",
   },
   destinationImage: {
     width: "80%",
@@ -265,7 +303,8 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     width: "70%",
     height: 40,
-    marginTop: 10
+    marginTop: 10,
+    alignItems: "center",
   },
   buttonText: {
     color: "#fff",
@@ -299,5 +338,8 @@ const styles = StyleSheet.create({
     position: "absolute",
     bottom: 0,
     width: "100%"
-  }
+  },
+  loadingNavigation: {
+    marginLeft: 10,
+  },
 });

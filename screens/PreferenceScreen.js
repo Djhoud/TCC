@@ -28,7 +28,7 @@ export default function PreferenceScreen() {
     {
       title: "Como você prefere se locomover?",
       field: "transport_preferences",
-      options: ["avião", "carro", "ônibus", "trem", "cruzeiro"],
+    options: ["carro", "ônibus", "moto", "a pé", "bicicleta"],
     },
     {
       title: "Quais atividades você gosta?",

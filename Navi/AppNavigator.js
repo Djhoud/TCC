@@ -1,3 +1,4 @@
+import ConfirmationScreen from "@/screens/ConfirmationScreen";
 import SearchScreen from "@/screens/SearchScreen";
 import SplashScreen from "@/screens/SplashScreen";
 import { NavigationContainer } from "@react-navigation/native";
@@ -41,13 +42,18 @@ export default function AppNavigator() {
           options={{ headerShown: false }} 
         />
         <Stack.Screen 
-          name="Search" 
-          component={SearchScreen} 
+          name="Confirmation" 
+          component={ConfirmationScreen} 
           options={{ headerShown: false }} 
         />
         <Stack.Screen 
           name="Coffee" 
           component={CoffeeScreen} 
+          options={{ headerShown: false }} 
+        />
+          <Stack.Screen 
+          name="Search" 
+          component={SearchScreen} 
           options={{ headerShown: false }} 
         />
         <Stack.Screen 
