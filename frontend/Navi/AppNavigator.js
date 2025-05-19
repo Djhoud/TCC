@@ -1,12 +1,12 @@
-import ConfirmationScreen from "@/screens/ConfirmationScreen";
-import SearchScreen from "@/screens/SearchScreen";
-import SplashScreen from "@/screens/SplashScreen";
 import { NavigationContainer } from "@react-navigation/native";
 import { createStackNavigator } from "@react-navigation/stack";
 import CoffeeScreen from "../screens/CoffeeScreen";
+import ConfirmationScreen from "../screens/ConfirmationScreen";
 import LoginScreen from "../screens/LoginScreen";
 import MainScreen from "../screens/MainScreen";
 import PreferenceScreen from "../screens/PreferenceScreen";
+import SearchScreen from "../screens/SearchScreen";
+import SplashScreen from "../screens/SplashScreen";
 import TravelBudgetScreen from "../screens/TravelBudgetScreen";
 import UserScreen from "../screens/UserScreen";
 

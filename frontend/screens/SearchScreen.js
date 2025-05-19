@@ -1,11 +1,11 @@
 import React, { useState } from "react";
 import {
-  FlatList,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
+    FlatList,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
 } from "react-native";
 import CloudBackReverse from "../components/CloudBackReverse";
 import Navbar from "../components/Navbar";

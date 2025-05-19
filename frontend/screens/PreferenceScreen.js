@@ -28,17 +28,17 @@ export default function PreferenceScreen() {
     {
       title: "Como você prefere se locomover?",
       field: "transport_preferences",
-    options: ["carro", "ônibus", "moto", "a pé", "bicicleta"],
+    options: ["carro", "ônibus", "moto", "bicicleta", "trem", "avião"],
     },
     {
       title: "Quais atividades você gosta?",
       field: "activity_preferences",
-      options: ["tour cultural", "museus", "parques", "compras", "gastronomia"],
+      options: ["tour cultural", "shows", "baladas", "compras", "cinema"],
     },
     {
       title: "O que você mais gosta de fazer?",
       field: "interests",
-      options: ["praia", "trilha", "caminhada", "balada", "shows", "natureza"],
+      options: ["praia", "trilha", "caminhada", "museus", "parques", "natureza"],
     },
   ];
 

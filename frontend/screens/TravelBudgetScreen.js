@@ -13,8 +13,8 @@ import {
 
 import { useNavigation } from "@react-navigation/native"; // Mantenha esta importação
 
-import CloudBackReverseLow from "@/components/CloudBackReverseLow";
 import BudgetSlider from "../components/BudgetSlider";
+import CloudBackReverseLow from "../components/CloudBackReverseLow";
 import Navbar from "../components/Navbar";
 
 const InputBox = ({ label, value, onChangeText, keyboardType }) => (
