@@ -1,51 +1,155 @@
-import { useNavigation } from "@react-navigation/native";
-import React, { useState } from "react";
-import { FlatList, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import React, { useContext, useEffect, useState } from "react";
+import {
+  ActivityIndicator,
+  Alert,
+  FlatList,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View
+} from "react-native";
 import CloudBackReverse from "../components/CloudBackReverse";
+import { AuthContext } from "../contexts/AuthContext";
+
+const API_BASE_URL = 'https://3747-170-246-250-79.ngrok-free.app'; // EX: 'https://abcd-efgh-ijkl.ngrok-free.app'
 
 export default function PreferenceScreen() {
-  const navigation = useNavigation();
+  const { token, userId, updatePreferencesStatus, signOut } = useContext(AuthContext);
+
   const [currentStep, setCurrentStep] = useState(0);
   const [preferences, setPreferences] = useState({
-    food_preferences: [],
     accommodation_preferences: [],
-    transport_preferences: [],
+    food_preferences: [],
+    local_transport_preferences: [],
+    destination_transport_preferences: [],
     activity_preferences: [],
     interests: [],
   });
+  const [loading, setLoading] = useState(false);
+  const [fetchingExistingPrefs, setFetchingExistingPrefs] = useState(true);
 
   const steps = [
     {
-      title: "Qual seus tipos de comidas favoritas?",
-      field: "food_preferences",
-      options: ["Japonesa", "Italiana", "Brasileira", "Francesa", "Mexicana", "Indiana"],
-    },
-    {
       title: "Qual tipo de acomodação você prefere?",
       field: "accommodation_preferences",
-      options: ["hotel", "pousada", "resort", "hostel", "apartamento", "casa"],
+      options: [
+        "Hotel de Luxo",
+        "Pousada Aconchegante",
+        "Resort com Tudo Incluído",
+        "Hostel Econômico",
+        "Apartamento Alugado",
+        "Casa de Temporada",
+        "Camping",
+        "Glamping",
+      ],
     },
     {
-      title: "Como você prefere se locomover?",
-      field: "transport_preferences",
-    options: ["carro", "ônibus", "moto", "bicicleta", "trem", "avião"],
+      title: "Qual seus tipos de comidas favoritas?",
+      field: "food_preferences",
+      options: [
+        "Culinária Local/Regional",
+        "Japonesa",
+        "Italiana",
+        "Brasileira Tradicional",
+        "Francesa",
+        "Mexicana",
+        "Indiana",
+        "Vegetariana/Vegana",
+        "Frutos do Mar",
+        "Fast Food",
+      ],
     },
     {
-      title: "Quais atividades você gosta?",
+      title: "Como você prefere se locomover no local?",
+      field: "local_transport_preferences",
+      options: [
+        "Carro Alugado",
+        "Transporte Público (Ônibus/Metrô)",
+        "Táxi/Aplicativo",
+        "Bicicleta",
+        "Caminhada",
+        "Moto",
+        "Trem Local",
+        "Barco/Ferry",
+      ],
+    },
+    {
+      title: "Como você prefere viajar até o local?",
+      field: "destination_transport_preferences",
+      options: [
+        "Avião",
+        "Carro Próprio",
+        "Ônibus de Viagem",
+        "Trem de Longa Distância",
+        "Cruzeiro",
+        "Van Compartilhada",
+      ],
+    },
+    {
+      title: "Quais atividades você gosta de fazer?",
       field: "activity_preferences",
-      options: ["tour cultural", "shows", "baladas", "compras", "cinema"],
+      options: [
+        "Tour Cultural/Histórico",
+        "Shows/Eventos",
+        "Vida Noturna/Baladas",
+        "Compras",
+        "Cinema/Teatro",
+        "Esportes Radicais",
+        "Relaxamento/Spa",
+        "Aventura na Natureza",
+        "Gastronomia/Degustação",
+      ],
     },
     {
-      title: "O que você mais gosta de fazer?",
+      title: "Quais são seus principais interesses de viagem?",
       field: "interests",
-      options: ["praia", "trilha", "caminhada", "museus", "parques", "natureza"],
+      options: [
+        "Praia/Sol",
+        "Trilhas/Montanhas",
+        "Caminhada/Exploração",
+        "Museus/Galerias de Arte",
+        "Parques/Jardins",
+        "Natureza/Vida Selvagem",
+        "Cidades Grandes",
+        "Vilarejos Pequenos",
+        "História Antiga",
+        "Modernidade/Tecnologia",
+      ],
     },
   ];
+
+  useEffect(() => {
+    const loadUserPreferences = async () => {
+      if (!token || !userId) {
+        setFetchingExistingPrefs(false);
+        return;
+      }
+      setFetchingExistingPrefs(true);
+      try {
+        const response = await fetch(`${API_BASE_URL}/api/preferences/user`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const data = await response.json();
+        if (response.ok && data.preferences) {
+          setPreferences(data.preferences);
+        } else if (!response.ok) {
+          if (response.status !== 404) {
+            Alert.alert('Erro', data.message || 'Não foi possível carregar suas preferências anteriores.');
+          }
+        }
+      } catch (error) {
+        Alert.alert('Erro', 'Erro de rede ao carregar preferências.');
+      } finally {
+        setFetchingExistingPrefs(false);
+      }
+    };
+    loadUserPreferences();
+  }, [token, userId]);
 
   const handleSelect = (option) => {
     const field = steps[currentStep].field;
     setPreferences((prev) => {
-      const current = [...prev[field]];
+      const current = [...(prev[field] || [])];
       const index = current.indexOf(option);
 
       if (index >= 0) {
@@ -67,6 +171,56 @@ export default function PreferenceScreen() {
     }
   };
 
+  const handleSavePreferences = async () => {
+    setLoading(true);
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/preferences/save`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ preferences: preferences }),
+      });
+
+      const responseData = await response.json();
+
+      if (!response.ok) {
+        throw new Error(responseData.message || "Erro ao salvar preferências.");
+      }
+
+      await updatePreferencesStatus(true);
+      Alert.alert("Sucesso", "Preferências salvas com sucesso!");
+    } catch (error) {
+      Alert.alert("Erro", error.message || "Erro ao salvar preferências.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleNext = () => {
+    const currentField = steps[currentStep].field;
+    if (!preferences[currentField] || preferences[currentField].length === 0) {
+      Alert.alert("Atenção", "Por favor, selecione pelo menos uma opção para continuar.");
+      return;
+    }
+
+    if (currentStep === steps.length - 1) {
+      handleSavePreferences();
+    } else {
+      setCurrentStep((prev) => prev + 1);
+    }
+  };
+
+  if (fetchingExistingPrefs) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#007AFF" />
+        <Text style={styles.loadingText}>Carregando suas preferências...</Text>
+      </View>
+    );
+  }
+
   return (
     <View style={styles.container}>
       <CloudBackReverse />
@@ -87,48 +241,51 @@ export default function PreferenceScreen() {
           ))}
         </View>
 
-        <FlatList
-          data={steps[currentStep].options}
-          numColumns={2}
-          keyExtractor={(item) => item}
-          contentContainerStyle={styles.optionsContainer}
-          renderItem={({ item }) => (
-            <TouchableOpacity
-              onPress={() => handleSelect(item)}
-              style={[
-                styles.option,
-                preferences[steps[currentStep].field].includes(item) && styles.selectedOption,
-              ]}
-            >
-              <Text style={styles.optionText}>{item}</Text>
-            </TouchableOpacity>
-          )}
-        />
+        <View style={styles.flatListWrapper}>
+          <FlatList
+            data={steps[currentStep].options}
+            numColumns={2}
+            keyExtractor={(item) => item}
+            contentContainerStyle={styles.optionsContainer}
+            renderItem={({ item }) => (
+              <TouchableOpacity
+                onPress={() => handleSelect(item)}
+                style={[
+                  styles.option,
+                  preferences[steps[currentStep].field]?.includes(item) && styles.selectedOption,
+                ]}
+              >
+                <Text style={styles.optionText}>{item}</Text>
+              </TouchableOpacity>
+            )}
+          />
+        </View>
 
         <Text style={styles.selectionLimitText}>Selecione no máximo 3 opções</Text>
 
         <View style={styles.buttonContainer}>
-          <TouchableOpacity onPress={handleBack} style={styles.navButton}>
+          <TouchableOpacity onPress={handleBack} style={styles.navButton} disabled={currentStep === 0}>
             <Text style={styles.navButtonText}>Voltar</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
             style={styles.navButton}
-            onPress={() => {
-              if (currentStep === steps.length - 1) {
-                console.log(preferences);
-                alert("Preferências salvas com sucesso!");
-                navigation.navigate("Main");
-              } else {
-                setCurrentStep((prev) => prev + 1);
-              }
-            }}
+            onPress={handleNext}
+            disabled={loading}
           >
-            <Text style={styles.navButtonText}>
-              {currentStep === steps.length - 1 ? "Finalizar" : "Próximo"}
-            </Text>
+            {loading ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <Text style={styles.navButtonText}>
+                {currentStep === steps.length - 1 ? "Finalizar" : "Próximo"}
+              </Text>
+            )}
           </TouchableOpacity>
         </View>
+
+        <TouchableOpacity style={styles.logoutButton} onPress={signOut}>
+          <Text style={styles.logoutButtonText}>Deslogar</Text>
+        </TouchableOpacity>
       </View>
     </View>
   );
@@ -138,6 +295,16 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#fff",
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+  },
+  loadingText: {
+    marginTop: 10,
+    fontSize: 16,
   },
   topArea: {
     height: "40%",
@@ -172,10 +339,13 @@ const styles = StyleSheet.create({
   activeStepIndicator: {
     backgroundColor: "#007AFF",
   },
+  flatListWrapper: {
+    flex: 1,
+    alignItems: 'center',
+    marginTop: 20,
+  },
   optionsContainer: {
-    justifyContent: "center",
-    alignItems: "center",
-    marginTop: 60,
+    paddingBottom: 20,
   },
   option: {
     margin: 8,
@@ -187,6 +357,8 @@ const styles = StyleSheet.create({
   },
   selectedOption: {
     backgroundColor: "#ADD8E6",
+    borderColor: "#007AFF",
+    borderWidth: 2,
   },
   optionText: {
     fontSize: 16,
@@ -216,5 +388,17 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontSize: 16,
     fontWeight: "bold",
+  },
+  logoutButton: {
+    backgroundColor: '#dc3545',
+    padding: 15,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  logoutButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
   },
 });

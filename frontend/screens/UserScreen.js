@@ -1,13 +1,13 @@
-import React, { useState } from "react";
+import React, { useContext, useState } from "react";
 import {
-    Dimensions,
-    FlatList,
-    Image,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View
+  Dimensions,
+  FlatList,
+  Image,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View
 } from "react-native";
 import florianopolis from "../assets/images/component/florianopolis.png";
 import gramado from "../assets/images/component/gramado.png";
@@ -17,19 +17,13 @@ import saopaulo from "../assets/images/component/saopaulo.png";
 import CloudBackground from "../components/CloudBackground";
 import Navbar from "../components/Navbar";
 import TravelCard from "../components/TravelCard";
+import { AuthContext } from "../contexts/AuthContext";
 
 const { width } = Dimensions.get("window");
 
 export default function ProfileScreen() {
+  const { user } = useContext(AuthContext);
   const [searchQuery, setSearchQuery] = useState("");
-
-  const user = {
-    name: "Usuario_01",
-    email: "Usuario_01@gmail.com",
-    password: "12********",
-    cpf: "24834512177",
-    photo: "https://i.pravatar.cc/150?img=12"
-  };
 
   const travels = [
     {

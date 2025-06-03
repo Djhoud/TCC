@@ -4,6 +4,10 @@
 # Node modules
 node_modules/
 
+
+# Exemplo do Banco de Dados
+goplanningDatabase.md
+
 # Logs
 logs
 *.log

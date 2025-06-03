@@ -1,45 +1,76 @@
 import { FontAwesome } from '@expo/vector-icons';
-import React from "react";
+import React, { useContext, useState } from "react";
+import { ActivityIndicator, Alert, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
+import CloudBackground from "../components/CloudBackground";
+import { AuthContext } from "../contexts/AuthContext";
 
-import { useNavigation } from "@react-navigation/native";
-import { StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
-import CloudBackground from "../components/CloudBackground"; // Importando as nuvens
+export default function LoginScreen({ navigation }) {
+  const { login, isLoading, error } = useContext(AuthContext);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
 
-export default function LoginScreen() {
-  const navigation = useNavigation();
+  const handleLogin = async () => {
+    if (!email || !password) {
+      Alert.alert("Erro", "Por favor, preencha todos os campos.");
+      return;
+    }
+
+    const success = await login(email, password); 
+
+    if (!success && error) {
+      // Opcional: Se você quiser um Alert em vez de apenas o texto na tela
+      // Alert.alert("Erro no Login", error); 
+    }
+  };
 
   return (
     <View style={styles.container}>
-      <CloudBackground /> 
+      <CloudBackground />
       <View style={styles.topArea}>
         <Text style={styles.welcomeText}>Entrar</Text>
       </View>
       <View style={styles.content}>
-        <TextInput 
-          placeholder="Email" 
-          style={styles.input} 
-          placeholderTextColor="#666" 
+        <TextInput
+          placeholder="Email"
+          style={styles.input}
+          placeholderTextColor="#666"
+          value={email}
+          onChangeText={setEmail}
+          keyboardType="email-address"
+          autoCapitalize="none"
         />
-        <TextInput 
-          placeholder="Senha" 
-          secureTextEntry 
-          style={styles.input} 
-          placeholderTextColor="#666" 
+        <TextInput
+          placeholder="Senha"
+          secureTextEntry
+          style={styles.input}
+          placeholderTextColor="#666"
+          value={password}
+          onChangeText={setPassword}
         />
         <TouchableOpacity style={{ alignSelf: "flex-end", marginBottom: 20 }}>
           <Text style={{ color: "#007AFF", fontSize: 15 }}>Esqueceu sua senha?</Text>
         </TouchableOpacity>
-        <TouchableOpacity 
-        style={styles.button} 
-        onPress={() => 
-        navigation.navigate("Preference")}>
-          <Text style={styles.buttonText}>Entrar</Text>
+
+        <TouchableOpacity
+          style={styles.button}
+          onPress={handleLogin}
+          disabled={isLoading}
+        >
+          {isLoading ? (
+            <ActivityIndicator color="#fff" />
+          ) : (
+            <Text style={styles.buttonText}>Entrar</Text>
+          )}
         </TouchableOpacity>
-        <TouchableOpacity>
+
+        {error && <Text style={styles.errorMessage}>{error}</Text>}
+
+        <TouchableOpacity onPress={() => navigation.navigate("Register")}>
           <Text style={styles.link}>
             <Text style={styles.linkBold}>Cadastre-se</Text>
           </Text>
         </TouchableOpacity>
+
         <View style={styles.socialButtonsContainer}>
           <TouchableOpacity style={[styles.socialButton, styles.google]}>
             <FontAwesome name="google" size={24} color="white" />
@@ -61,7 +92,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   topArea: {
-    height: "43%", 
+    height: "43%",
     justifyContent: "center",
     alignItems: "center",
     backgroundColor: "#3A8FFF",
@@ -131,5 +162,10 @@ const styles = StyleSheet.create({
   },
   twitter: {
     backgroundColor: "#3C3C3C",
+  },
+  errorMessage: {
+    color: 'red',
+    marginTop: 10,
+    textAlign: 'center',
   },
 });
