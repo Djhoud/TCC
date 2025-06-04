@@ -16,7 +16,7 @@ interface AuthContextType {
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const API_BASE_URL = 'https://3747-170-246-250-79.ngrok-free.app'; // EX: 'https://abcd-efgh-ijkl.ngrok-free.app'
+const API_BASE_URL = ' https://a85d-170-246-250-79.ngrok-free.app '; // EX: 'https://abcd-efgh-ijkl.ngrok-free.app'
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [token, setToken] = useState<string | null>(null);

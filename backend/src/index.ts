@@ -1,10 +1,11 @@
-// Arquivo: backend/index.ts
 import cors from 'cors';
 import dotenv from 'dotenv';
 import express, { ErrorRequestHandler } from 'express';
 import { db } from './database';
 import verifyToken from './middleware/authMiddleware';
 import authRoutes from './routes/authRoutes';
+import cityRoutes from './routes/cityRoutes'; // Adicione esta linha!
+import packageRoutes from './routes/packageRoutes';
 import preferenceRoutes from './routes/preferencesRoutes';
 
 dotenv.config();
@@ -20,8 +21,13 @@ app.use(cors({
 
 app.use(express.json());
 
+// Rotas de autenticação (não protegidas por verifyToken)
 app.use('/auth', authRoutes);
+
+// Rotas protegidas por verifyToken
 app.use('/api/preferences', verifyToken, preferenceRoutes);
+app.use('/api/packages', verifyToken, packageRoutes);
+app.use('/api', cityRoutes); // Adicione esta linha!
 
 app.get('/', (req, res) => {
   res.send('Servidor rodando com sucesso! 🚀');
@@ -40,15 +46,13 @@ app.get('/api/users', async (req, res) => {
 // Middleware de tratamento de erros (DEVE SER O ÚLTIMO app.use)
 const errorHandler: ErrorRequestHandler = (err, req, res, next) => {
   console.error('Erro capturado pelo errorHandler:', err);
-  const statusCode = res.statusCode === 200 ? 500 : res.statusCode; // Mantém o status code se já foi setado, senão usa 500
-  // Garanta que a resposta de erro seja SEMPRE JSON
+  const statusCode = res.statusCode === 200 ? 500 : res.statusCode;
   res.status(statusCode).json({
     message: err.message || 'Um erro inesperado ocorreu.',
     stack: process.env.NODE_ENV === 'production' ? null : err.stack,
   });
 };
 app.use(errorHandler);
-
 
 app.listen(PORT, () => {
   console.log(`Servidor rodando na porta ${PORT}`);

@@ -13,3 +13,4 @@ const pool = mysql.createPool({
 });
 
 export { pool as db };
+// Você pode usar o pool para fazer consultas em qualquer parte do seu backend
