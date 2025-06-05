@@ -2,16 +2,16 @@
 import { createStackNavigator } from '@react-navigation/stack';
 import React from 'react';
 
-// Importe todas as suas telas
-import CoffeeScreen from '../screens/CoffeeScreen'; // Confirmar nome exato
-import ConfirmationScreen from '../screens/ConfirmationScreen'; // Confirmar nome exato
+// Importe todas as suas telas (confirmando os nomes que você usou)
+import CoffeeScreen from '../screens/CoffeeScreen';
+import ConfirmationScreen from '../screens/ConfirmationScreen';
 import LoginScreen from '../screens/LoginScreen';
 import MainScreen from '../screens/MainScreen';
-import PreferenceScreen from '../screens/PreferenceScreen'; // Note: foi 'PreferencesScreen' em alguns exemplos, confirme o nome exato
+import PreferenceScreen from '../screens/PreferenceScreen';
 import RegisterScreen from '../screens/RegisterScreen';
-import SearchScreen from '../screens/SearchScreen'; // Confirmar nome exato
-import TravelBudgetScreen from '../screens/TravelBudgetScreen'; // Confirmar nome exato
-import UserScreen from '../screens/UserScreen';
+import SearchScreen from '../screens/SearchScreen';
+import TravelBudgetScreen from '../screens/TravelBudgetScreen';
+import ProfileScreen from '../screens/UserScreen'; // Renomeei de UserScreen para ProfileScreen, conforme o nome do arquivo
 
 const Stack = createStackNavigator();
 
@@ -21,29 +21,33 @@ interface AppNavigatorProps {
 }
 
 const AppNavigator = ({ isAuthenticated, hasCompletedPreferences }: AppNavigatorProps) => {
+  let initialRouteName;
+  if (isAuthenticated && hasCompletedPreferences) {
+    initialRouteName = 'Main';
+  } else if (isAuthenticated && !hasCompletedPreferences) {
+    initialRouteName = 'Preference';
+  } else {
+    initialRouteName = 'Login';
+  }
+
   return (
-    <Stack.Navigator screenOptions={{ headerShown: false }} id={undefined}>
-      {/* Lógica condicional refatorada para evitar espaços indesejados */}
-      {isAuthenticated && hasCompletedPreferences ? (
-        // Caso 1: Usuário autenticado E preferências completas -> Telas principais
-        <>
-          <Stack.Screen name="Main" component={MainScreen} />
-          <Stack.Screen name="Budget" component={TravelBudgetScreen} />
-          <Stack.Screen name="Confirmation" component={ConfirmationScreen} />
-          <Stack.Screen name="Coffee" component={CoffeeScreen} />
-          <Stack.Screen name="Search" component={SearchScreen} />
-          <Stack.Screen name="User" component={UserScreen} />
-        </>
-      ) : isAuthenticated && !hasCompletedPreferences ? (
-        // Caso 2: Usuário autenticado MAS preferências NÃO completas -> Tela de Preferências
-        <Stack.Screen name="Preference" component={PreferenceScreen} />
-      ) : (
-        // Caso 3: Usuário NÃO autenticado -> Telas de Login/Registro
-        <>
-          <Stack.Screen name="Login" component={LoginScreen} />
-          <Stack.Screen name="Register" component={RegisterScreen} />
-        </>
-      )}
+    <Stack.Navigator
+      screenOptions={{ headerShown: false }}
+      initialRouteName={initialRouteName}
+      id={undefined} // <<<<<<<<<< Adicione esta linha de volta!
+    >
+      {/* Telas de Autenticação e Cadastro (Públicas) */}
+      <Stack.Screen name="Login" component={LoginScreen} />
+      <Stack.Screen name="Register" component={RegisterScreen} />
+      <Stack.Screen name="Preference" component={PreferenceScreen} />
+
+      {/* Telas Principais do Aplicativo (Privadas) */}
+      <Stack.Screen name="Main" component={MainScreen} />
+      <Stack.Screen name="Budget" component={TravelBudgetScreen} />
+      <Stack.Screen name="Confirmation" component={ConfirmationScreen} />
+      <Stack.Screen name="Coffee" component={CoffeeScreen} />
+      <Stack.Screen name="Search" component={SearchScreen} />
+      <Stack.Screen name="Profile" component={ProfileScreen} />
     </Stack.Navigator>
   );
 };

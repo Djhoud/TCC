@@ -1,19 +1,23 @@
 import React, { useContext, useState } from "react";
 import {
+  Alert,
   Dimensions,
   FlatList,
-  Image,
+  Image, // Manter Image para o avatar
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
   View
 } from "react-native";
-import florianopolis from "../assets/images/component/florianopolis.png";
-import gramado from "../assets/images/component/gramado.png";
-import rio from "../assets/images/component/rio.png";
-import salvador from "../assets/images/component/salvador.png";
-import saopaulo from "../assets/images/component/saopaulo.png";
+// Removendo imports de imagens fake, pois não são mais usadas aqui
+// import florianopolis from "../assets/images/component/florianopolis.png";
+// import gramado from "../assets/images/component/gramado.png";
+// import rio from "../assets/images/component/rio.png";
+// import salvador from "../assets/images/component/salvador.png";
+// import saopaulo from "../assets/images/component/saopaulo.png";
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useNavigation } from '@react-navigation/native';
 import CloudBackground from "../components/CloudBackground";
 import Navbar from "../components/Navbar";
 import TravelCard from "../components/TravelCard";
@@ -24,61 +28,55 @@ const { width } = Dimensions.get("window");
 export default function ProfileScreen() {
   const { user } = useContext(AuthContext);
   const [searchQuery, setSearchQuery] = useState("");
+  const navigation = useNavigation();
 
-  const travels = [
-    {
-      id: "1",
-      title: "Viagem dos Sonhos",
-      location: "Rio de Janeiro",
-      date: "24/12/2024",
-      stars: 4,
-      image: rio
-    },
-    {
-      id: "2",
-      title: "Trilha Selvagem",
-      location: "Chapada Diamantina",
-      date: "10/01/2025",
-      stars: 5,
-      image: saopaulo
-    },
-    {
-      id: "3",
-      title: "Cidade Encantada",
-      location: "Gramado",
-      date: "14/07/2025",
-      stars: 3,
-      image: gramado
-    },
-    {
-      id: "4",
-      title: "Aventura Gelada",
-      location: "Patagônia",
-      date: "05/08/2025",
-      stars: 5,
-      image: salvador
-    },
-    {
-      id: "5",
-      title: "Safari no Cerrado",
-      location: "Jalapão",
-      date: "22/09/2025",
-      stars: 4,
-      image: florianopolis
-    }
-  ];
+  const travels = [];
+
+  const handleLogout = async () => {
+    Alert.alert(
+      "Deslogar",
+      "Tem certeza que deseja sair?",
+      [
+        {
+          text: "Cancelar",
+          style: "cancel"
+        },
+        {
+          text: "Sim",
+          onPress: async () => {
+            try {
+              await AsyncStorage.removeItem('userToken');
+              console.log('Token do usuário removido do AsyncStorage.');
+              navigation.reset({
+                index: 0,
+                routes: [{ name: 'Login' }],
+              });
+            } catch (e) {
+              console.error("Erro ao remover token do AsyncStorage:", e);
+              Alert.alert("Erro", "Não foi possível deslogar. Tente novamente.");
+            }
+          }
+        }
+      ]
+    );
+  };
 
   const pages = [
     {
       key: "1",
       content: (
         <>
-          <LabeledInput label="Nome" value={user.name} />
-          <LabeledInput label="E-mail" value={user.email} />
-          <LabeledInput label="Senha" value={user.password} secureTextEntry />
-          <LabeledInput label="CPF" value={user.cpf} />
+          {/* Adicionei 'user?' para verificar se 'user' existe antes de acessar suas propriedades */}
+          {/* Se 'user' for null/undefined, 'user?.name' será undefined, e '|| ''' fornecerá uma string vazia */}
+          <LabeledInput label="Nome" value={user?.name || ''} />
+          <LabeledInput label="E-mail" value={user?.email || ''} />
+          <LabeledInput label="Senha" value="********" secureTextEntry />
+          <LabeledInput label="CPF" value={user?.cpf || ''} />
           <TouchableOpacity style={styles.button}>
             <Text style={styles.buttonText}>Editar</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={[styles.button, styles.logoutButton]} onPress={handleLogout}>
+            <Text style={styles.logoutButtonText}>Deslogar</Text>
           </TouchableOpacity>
         </>
       )
@@ -113,6 +111,9 @@ export default function ProfileScreen() {
             )}
             contentContainerStyle={{ gap: 12, paddingBottom: 100 }}
             showsVerticalScrollIndicator={false}
+            ListEmptyComponent={() => (
+              <Text style={styles.emptyHistoryText}>Nenhum histórico de viagem encontrado.</Text>
+            )}
           />
         </View>
       ),
@@ -123,8 +124,10 @@ export default function ProfileScreen() {
     <View style={styles.container}>
       <CloudBackground />
       <View style={styles.topArea}>
-        <Image source={{ uri: user.photo }} style={styles.avatar} />
-        <Text style={styles.title}>{user.name}</Text>
+        {/* Use user?.photo para evitar erro se user for null/undefined */}
+        <Image source={{ uri: user?.photo || 'https://via.placeholder.com/160' }} style={styles.avatar} />
+        {/* Use user?.name para evitar erro se user for null/undefined */}
+        <Text style={styles.title}>{user?.name || 'Usuário'}</Text>
       </View>
       <FlatList
         data={pages}
@@ -227,4 +230,18 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     fontSize: 16
   },
+  logoutButton: {
+    backgroundColor: '#dc3545',
+    borderColor: '#dc3545',
+    marginTop: 15,
+  },
+  logoutButtonText: {
+    color: '#fff',
+  },
+  emptyHistoryText: {
+    textAlign: 'center',
+    marginTop: 50,
+    fontSize: 16,
+    color: '#888',
+  }
 });

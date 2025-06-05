@@ -21,9 +21,9 @@ const preferenceToTableMap: { [key: string]: string } = {
 // @access  Private (requer autenticação)
 router.post('/generate', verifyToken, asyncHandler(async (req: Request, res: Response) => {
     const userId = req.userId;
-    const { budget, destinationName } = req.body; // Orçamento e nome do destino (ex: 'São Paulo')
+    const { orcamento, destino } = req.body; // Orçamento e nome do destino (ex: 'São Paulo')
 
-    if (!userId || !budget || !destinationName) {
+    if (!userId || !orcamento || !destino) {
         return res.status(400).json({ message: 'Dados inválidos: orçamento e destino são obrigatórios.' });
     }
 
@@ -49,7 +49,7 @@ router.post('/generate', verifyToken, asyncHandler(async (req: Request, res: Res
         // 2. Obter o ID do destino
         const [destinationRows]: any = await connection.query(
             'SELECT id FROM destinos WHERE nome = ?',
-            [destinationName]
+            [destino]
         );
         if (destinationRows.length === 0) {
             return res.status(404).json({ message: 'Destino não encontrado.' });
@@ -57,8 +57,8 @@ router.post('/generate', verifyToken, asyncHandler(async (req: Request, res: Res
         const destinationId = destinationRows[0].id;
 
         const generatedPackage: any = {
-            destination: destinationName,
-            budget: budget,
+            destination: destino,
+            budget: orcamento,
             items: {
                 accommodation: null,
                 food: [],
@@ -83,7 +83,7 @@ router.post('/generate', verifyToken, asyncHandler(async (req: Request, res: Res
                  JOIN hoteis ho ON h.id = ho.id_hospedagem
                  WHERE h.cidade = ? AND h.categoria IN (${placeholders})
                  AND ho.preco <= ? ORDER BY RAND() LIMIT 1`, // Seleciona 1 aleatoriamente que caiba no orçamento
-                [destinationName, ...accommodationPrefs, budget * 0.4] // Aloca 40% do orçamento para hospedagem
+                [destino, ...accommodationPrefs, orcamento * 0.4] // Aloca 40% do orçamento para hospedagem
             );
             if (accommodations.length > 0) {
                 generatedPackage.items.accommodation = accommodations[0];
@@ -101,7 +101,7 @@ router.post('/generate', verifyToken, asyncHandler(async (req: Request, res: Res
                  FROM alimentacoes
                  WHERE id_destino = ? AND categoria IN (${placeholders})
                  AND preco <= ? ORDER BY RAND() LIMIT 3`, // Tenta 3 opções
-                [destinationId, ...foodPrefs, budget * 0.15] // Aloca 15% do orçamento por refeição (média)
+                [destinationId, ...foodPrefs, orcamento * 0.15] // Aloca 15% do orçamento por refeição (média)
             );
             generatedPackage.items.food = foodOptions;
             foodOptions.forEach((f: any) => currentTotalCost += f.preco);
@@ -119,7 +119,7 @@ router.post('/generate', verifyToken, asyncHandler(async (req: Request, res: Res
                  LEFT JOIN detalhes_avioes da ON t.id = da.id_transporte
                  WHERE t.cidade_destino = ? AND t.tipo IN (${placeholders})
                  AND COALESCE(do.preco, da.preco) <= ? ORDER BY RAND() LIMIT 1`,
-                [destinationName, ...destTransportPrefs, budget * 0.3] // Aloca 30% do orçamento para transporte de destino (ida)
+                [destino, ...destTransportPrefs, orcamento * 0.3] // Aloca 30% do orçamento para transporte de destino (ida)
             );
             if (transports.length > 0) {
                 generatedPackage.items.destinationTransport = transports[0];
@@ -136,7 +136,7 @@ router.post('/generate', verifyToken, asyncHandler(async (req: Request, res: Res
                  FROM transporte_local
                  WHERE cidade = ? AND tipo IN (${placeholders})
                  AND preco <= ? ORDER BY RAND() LIMIT 1`,
-                [destinationName, ...localTransportPrefs, budget * 0.05] // Aloca 5% do orçamento para transporte local
+                [destino, ...localTransportPrefs, orcamento * 0.05] // Aloca 5% do orçamento para transporte local
             );
             if (localTransports.length > 0) {
                 generatedPackage.items.localTransport = localTransports[0];
@@ -156,7 +156,7 @@ router.post('/generate', verifyToken, asyncHandler(async (req: Request, res: Res
                  FROM atividades
                  WHERE cidade = ? AND categoria IN (${placeholders})
                  AND preco <= ? ORDER BY RAND() LIMIT 3`, // Tenta 3 atividades
-                [destinationName, ...combinedPrefs, budget * 0.1] // Aloca 10% do orçamento por atividade (média)
+                [destino, ...combinedPrefs, orcamento * 0.1] // Aloca 10% do orçamento por atividade (média)
             );
             generatedPackage.items.activities = activities;
             activities.forEach((a: any) => currentTotalCost += a.preco);
@@ -166,7 +166,7 @@ router.post('/generate', verifyToken, asyncHandler(async (req: Request, res: Res
                  FROM interesses
                  WHERE cidade = ? AND categoria IN (${placeholders})
                  AND preco <= ? ORDER BY RAND() LIMIT 3`, // Tenta 3 interesses
-                [destinationName, ...combinedPrefs, budget * 0.05] // Aloca 5% do orçamento por interesse (média)
+                [destino, ...combinedPrefs, orcamento * 0.05] // Aloca 5% do orçamento por interesse (média)
             );
             generatedPackage.items.interests = interests;
             interests.forEach((i: any) => currentTotalCost += i.preco);
@@ -181,7 +181,7 @@ router.post('/generate', verifyToken, asyncHandler(async (req: Request, res: Res
                  FROM eventos
                  WHERE id_destino = ? AND categoria IN (${placeholders})
                  AND preco <= ? ORDER BY RAND() LIMIT 1`, // Tenta 1 evento
-                [destinationId, ...eventPrefs, budget * 0.05] // Aloca 5% do orçamento para evento
+                [destinationId, ...eventPrefs, orcamento * 0.05] // Aloca 5% do orçamento para evento
             );
             generatedPackage.items.events = events;
             events.forEach((e: any) => currentTotalCost += e.preco);

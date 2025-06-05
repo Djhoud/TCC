@@ -1,11 +1,12 @@
+// backend/src/index.ts
 import cors from 'cors';
 import dotenv from 'dotenv';
 import express, { ErrorRequestHandler } from 'express';
 import { db } from './database';
 import verifyToken from './middleware/authMiddleware';
 import authRoutes from './routes/authRoutes';
-import cityRoutes from './routes/cityRoutes'; // Adicione esta linha!
-import packageRoutes from './routes/packageRoutes';
+import cityRoutes from './routes/cityRoutes';
+import packageRoutes from './routes/packageRoutes'; // Adicione esta linha!
 import preferenceRoutes from './routes/preferencesRoutes';
 
 dotenv.config();
@@ -26,14 +27,14 @@ app.use('/auth', authRoutes);
 
 // Rotas protegidas por verifyToken
 app.use('/api/preferences', verifyToken, preferenceRoutes);
-app.use('/api/packages', verifyToken, packageRoutes);
-app.use('/api', cityRoutes); // Adicione esta linha!
+app.use('/api/packages', verifyToken, packageRoutes); // Adicione/Confirme esta linha!
+app.use('/api', cityRoutes); // Rota de cidades (já estava aqui)
 
 app.get('/', (req, res) => {
   res.send('Servidor rodando com sucesso! 🚀');
 });
 
-app.get('/api/users', async (req, res) => {
+app.get('/api/users', verifyToken, async (req, res) => { // Protegendo esta rota também
   try {
     const [rows] = await db.query('SELECT * FROM usuarios');
     res.json(rows);

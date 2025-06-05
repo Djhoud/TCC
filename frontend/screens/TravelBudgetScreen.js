@@ -1,467 +1,421 @@
-import DateTimePicker from "@react-native-community/datetimepicker";
-import React, { useCallback, useEffect, useState } from "react"; // MODIFICAÇÃO: Adicione 'useCallback'
+// frontend/app/screens/TravelBudgetScreen.js
+import AsyncStorage from '@react-native-async-storage/async-storage'; // <<-- Adicione este import
+import DateTimePicker from '@react-native-community/datetimepicker';
+import { Picker } from '@react-native-picker/picker';
+import { useNavigation } from '@react-navigation/native';
+import React, { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
-  Alert, // MODIFICAÇÃO: Para o indicador de carregamento das sugestões
-  Image,
-  Platform,
+  Alert,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
   View,
-} from "react-native";
+} from 'react-native';
+import BudgetSlider from '../components/BudgetSlider';
 
-import { useNavigation } from "@react-navigation/native";
-
-import BudgetSlider from "../components/BudgetSlider";
-import CloudBackReverseLow from "../components/CloudBackReverseLow";
-import Navbar from "../components/Navbar";
-
-const InputBox = ({ label, value, onChangeText, keyboardType }) => (
-  <View style={styles.box}>
-    <Text style={styles.label}>{label}</Text>
-    <TextInput
-      style={styles.input}
-      value={value}
-      onChangeText={onChangeText}
-      keyboardType={keyboardType}
-    />
-  </View>
-);
-
-const DateInputBox = ({ label, value, onPress }) => (
-  <View style={styles.box}>
-    <Text style={styles.label}>{label}</Text>
-    <TouchableOpacity onPress={onPress}>
-      <TextInput
-        style={styles.input}
-        value={value}
-        editable={false}
-        pointerEvents="none"
-      />
-    </TouchableOpacity>
-  </View>
-);
-
-const Button = ({ text, style, onPress }) => (
-  <TouchableOpacity style={style} onPress={onPress}>
-    <Text style={styles.buttonText}>{text}</Text>
-  </TouchableOpacity>
-);
+// Importe suas imagens se ainda as usar para sugestões de imagem
+import rioImage from '../assets/images/component/rio.png';
+import spImage from '../assets/images/component/saopaulo.png';
+// Adicione mais se precisar, ou remova se for usar URLs do backend
 
 export default function TravelBudgetScreen() {
   const navigation = useNavigation();
-  const [destination, setDestination] = useState("");
-  const [budget, setBudget] = useState(500);
+  const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL;
+
+  const [destination, setDestination] = useState('');
+  const [budget, setBudget] = useState(1000); // Valor inicial do orçamento
   const [adults, setAdults] = useState(1);
   const [children, setChildren] = useState(0);
-  const [dateIn, setDateIn] = useState("05/09/24");
-  const [dateOut, setDateOut] = useState("05/09/24");
+  const [dateIn, setDateIn] = useState(''); // Formato DD/MM/YY
+  const [dateOut, setDateOut] = useState(''); // Formato DD/MM/YY
   const [showDateInPicker, setShowDateInPicker] = useState(false);
   const [showDateOutPicker, setShowDateOutPicker] = useState(false);
 
-  // MODIFICAÇÃO: Novos estados para as sugestões da API
-  const [fetchedSuggestions, setFetchedSuggestions] = useState([]); // Armazena as sugestões retornadas pela API
-  const [loadingSuggestions, setLoadingSuggestions] = useState(false); // Indica se as sugestões estão sendo carregadas
-  const [showSuggestionsDropdown, setShowSuggestionsDropdown] = useState(false); // Controla a visibilidade do dropdown de sugestões
+  const [destinationSuggestions, setDestinationSuggestions] = useState([]);
+  const [loadingSuggestions, setLoadingSuggestions] = useState(false);
+  const [showSuggestions, setShowSuggestions] = useState(false);
 
-  const [packageDataToSend, setPackageDataToSend] = useState(null);
-  const [loadingNavigation, setLoadingNavigation] = useState(false);
+  const [loadingNavigation, setLoadingNavigation] = useState(false); // Novo estado para carregamento
 
-  // MODIFICAÇÃO: A lista estática 'destinations' NÃO é mais necessária e pode ser removida.
-  // Remova as seguintes linhas:
-  // const destinations = [
-  //   "Rio de Janeiro",
-  //   "São Paulo",
-  //   "Salvador",
-  //   "Florianópolis",
-  //   "Porto Alegre"
-  // ];
-
-  const getDestinationImage = (destination) => {
-    const images = {
-      "Rio de Janeiro": require("../assets/images/component/rio.png"),
-      "São Paulo": require("../assets/images/component/saopaulo.png"),
-      "Salvador": require("../assets/images/component/salvador.png"),
-      "Florianópolis": require("../assets/images/component/florianopolis.png"),
-      "Gramado": require("../assets/images/component/gramado.png"),
-      // MODIFICAÇÃO: Considere adicionar mais mapeamentos de imagem conforme as cidades no seu DB
-      // Ou uma lógica para buscar uma imagem genérica se não houver um match exato
-    };
-    return images[destination] || require("../assets/images/component/default.png");
+  // Função para mapear cidades a imagens (se ainda for usar localmente)
+  const getDestinationImage = (cityName) => {
+    switch (cityName.toLowerCase()) {
+      case 'rio de janeiro':
+        return rioImage;
+      case 'são paulo':
+        return spImage;
+      case 'belo horizonte':
+        return bhImage;
+      default:
+        return null; // Ou uma imagem padrão
+    }
   };
 
-    const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL;  
-
+  // Função para formatar a data de Date para DD/MM/YY
   const formatDate = (date) => {
-    // Assegura que 'date' é um objeto Date antes de formatar
-    if (!(date instanceof Date)) {
-      // MODIFICAÇÃO: Adicione um console.warn ou log para depuração se 'date' não for Date
-      // console.warn("formatDate received non-Date object:", date);
-      date = new Date(date); // Tenta converter, pode precisar de um parser mais robusto para strings de data
-      if (isNaN(date.getTime())) { // Se a conversão falhar, usa a data atual como fallback seguro
-         date = new Date();
-      }
-    }
-    return date.toLocaleDateString("pt-BR");
+    if (!date) return '';
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = String(date.getFullYear()).slice(-2); // Pega os 2 últimos dígitos
+    return `${day}/${month}/${year}`;
   };
 
-  // MODIFICAÇÃO: Função para buscar sugestões do backend
-    const fetchDestinationSuggestions = useCallback(async (text) => {
-    if (text.length < 2) {
-      setFetchedSuggestions([]);
-      setLoadingSuggestions(false);
-      setShowSuggestionsDropdown(false);
-      return;
-    }
+  const handleDateInChange = (event, selectedDate) => {
+    const currentDate = selectedDate || new Date();
+    setShowDateInPicker(false);
+    setDateIn(formatDate(currentDate));
+  };
 
-    setLoadingSuggestions(true);
-    try {
-      // MODIFICAÇÃO: Use a variável de ambiente aqui
-      const response = await fetch(`${API_BASE_URL}/api/cities/suggestions?search=${text}`);
+  const handleDateOutChange = (event, selectedDate) => {
+    const currentDate = selectedDate || new Date();
+    setShowDateOutPicker(false);
+    setDateOut(formatDate(currentDate));
+  };
 
-      if (!response.ok) {
-        throw new Error(`Erro na API: ${response.status} ${response.statusText}`);
+  // Efeito para buscar sugestões de destino
+  useEffect(() => {
+    const fetchDestinationSuggestions = async () => {
+      if (destination.length < 3) {
+        setDestinationSuggestions([]);
+        return;
       }
+      setLoadingSuggestions(true);
+     // ... dentro do useEffect, na função fetchDestinationSuggestions ...
 
+try {
+      const response = await fetch(`${API_BASE_URL}/api/cities/suggestions?search=${destination}`);
+      if (!response.ok) {
+        throw new Error(`Erro na API: ${response.status}`);
+      }
       const data = await response.json();
-      setFetchedSuggestions(data);
-      setShowSuggestionsDropdown(data.length > 0);
+      console.log("--- Frontend Debug (Sugestões) ---");
+      console.log("Dados de sugestões recebidos do backend:", data); // <<< VERIFIQUE ESTA LINHA
+      setDestinationSuggestions(data);
+      setShowSuggestions(true);
     } catch (error) {
-      console.error("Erro ao buscar sugestões de destino:", error);
-      Alert.alert("Erro", "Não foi possível buscar sugestões de destino. Verifique sua conexão ou tente novamente.");
-      setFetchedSuggestions([]);
-      setShowSuggestionsDropdown(false);
+      console.error('Erro ao buscar sugestões de destino:', error);
     } finally {
       setLoadingSuggestions(false);
     }
-  }, [API_BASE_URL]);  // Dependências vazias, pois a URL base é estática por enquanto
-
-  // MODIFICAÇÃO: Efeito para disparar a busca de sugestões com debounce
-  useEffect(() => {
-    const handler = setTimeout(() => {
-      fetchDestinationSuggestions(destination);
-    }, 300); // Debounce de 300ms para evitar muitas requisições ao digitar
-
-    return () => {
-      clearTimeout(handler); // Limpa o timer se o destino mudar antes do tempo
     };
-  }, [destination, fetchDestinationSuggestions]); // Dispara sempre que o 'destination' muda
 
-  // Lógica de Navegação (já existente)
-  useEffect(() => {
-    if (packageDataToSend) {
-      setLoadingNavigation(true);
-      navigation.navigate("Confirmation", { packageData: packageDataToSend });
-      setPackageDataToSend(null);
-      setLoadingNavigation(false);
-    }
-  }, [packageDataToSend, navigation]);
+    const handler = setTimeout(() => {
+      fetchDestinationSuggestions();
+    }, 500); // Atraso de 500ms para buscar sugestões
 
-  const handleConcluir = () => {
-    // MODIFICAÇÃO: Adicione validação básica (aprimore conforme a necessidade!)
-    if (!destination || destination.trim() === "") {
-        Alert.alert("Campo Obrigatório", "Por favor, digite um destino.");
-        return;
+    return () => clearTimeout(handler); // Limpa o timeout anterior
+  }, [destination, API_BASE_URL]);
+
+ const handleDestinationSelect = (selectedDestination) => {
+  console.log("--- Frontend Debug (handleDestinationSelect) ---");
+  console.log("Sugestão selecionada:", selectedDestination); // <<-- MANTENHA ESTA LINHA
+
+  setDestination(selectedDestination);
+  setShowSuggestions(false); // Esconde as sugestões após a seleção
+};
+
+  const handleConcluir = async () => {
+    // 1. Validações básicas
+    if (!destination || destination.trim() === '') {
+      Alert.alert('Erro', 'Por favor, selecione um destino.');
+      return;
     }
-    if (adults <= 0) {
-        Alert.alert("Número de Adultos Inválido", "O número de adultos deve ser maior que zero.");
-        return;
+    if (!dateIn || !dateOut) {
+      Alert.alert('Erro', 'Por favor, selecione as datas de ida e volta.');
+      return;
     }
-    // Exemplo de validação de data (muito básica, refine conforme sua necessidade)
-    const parsedDateIn = new Date(dateIn);
-    const parsedDateOut = new Date(dateOut);
-    if (isNaN(parsedDateIn.getTime()) || isNaN(parsedDateOut.getTime())) {
-        Alert.alert("Datas Inválidas", "Por favor, selecione datas válidas.");
-        return;
+    const dIn = new Date(dateIn.split('/').reverse().join('-')); // Converte para YYYY-MM-DD
+    const dOut = new Date(dateOut.split('/').reverse().join('-')); // Converte para YYYY-MM-DD
+    if (dIn > dOut) {
+      Alert.alert('Erro', 'A data de volta não pode ser anterior à data de ida.');
+      return;
     }
-    if (parsedDateIn > parsedDateOut) {
-        Alert.alert("Datas Inválidas", "A data de saída não pode ser anterior à data de entrada.");
-        return;
+    if (adults === 0 && children === 0) {
+      Alert.alert('Erro', 'Pelo menos um adulto ou criança deve ser selecionado.');
+      return;
+    }
+    if (budget <= 0) {
+      Alert.alert('Erro', 'O orçamento deve ser maior que zero.');
+      return;
     }
 
-
-    const packageData = {
-      destination: destination,
-      departureDate: dateIn, // Envia a string formatada
-      returnDate: dateOut, // Envia a string formatada
+    // 2. Coletar todos os parâmetros
+    const packageParams = {
+      destino: destination,
+      orcamento: budget,
       adults: adults,
       children: children,
-      budget: budget,
-      attractions: [], // Inicializa como um array vazio para evitar erro de map na ConfirmationScreen
+      dateIn: dateIn,
+      dateOut: dateOut,
     };
-    setPackageDataToSend(packageData);
-  };
 
-  // MODIFICAÇÃO: Funções para o DatePicker para usar o estado atual para o valor
-  const onDateInChange = (event, selectedDate) => {
-    setShowDateInPicker(false);
-    if (selectedDate) {
-      // Atualiza o estado dateIn com a data formatada
-      setDateIn(formatDate(selectedDate));
-      // Opcional: Se a data de entrada for posterior à data de saída atual, atualiza a data de saída também
-      if (new Date(selectedDate) > new Date(dateOut)) {
-        setDateOut(formatDate(selectedDate));
+    console.log("--- Frontend Debug ---");
+    console.log("Dados do pacote a serem enviados:", packageParams);
+    console.log("Tipo do orçamento (budget):", typeof budget, "Valor:", budget);
+    console.log("Tipo do destino (destination):", typeof destination, "Valor:", destination);
+
+    let userToken = null;
+    try {
+      userToken = await AsyncStorage.getItem('userToken');
+      console.log("Token recuperado do AsyncStorage:", userToken ? "Token presente" : "Token AUSENTE!");
+      if (!userToken) {
+        Alert.alert("Erro de Autenticação", "Você precisa estar logado para gerar um pacote. Por favor, faça login novamente.");
+        setLoadingNavigation(false);
+        return;
       }
+    } catch (e) {
+      console.error("Erro ao recuperar token do AsyncStorage:", e);
+      Alert.alert("Erro", "Não foi possível acessar seus dados de sessão. Tente novamente.");
+      setLoadingNavigation(false);
+      return;
     }
-  };
 
-  const onDateOutChange = (event, selectedDate) => {
-    setShowDateOutPicker(false);
-    if (selectedDate) {
-      // Atualiza o estado dateOut com a data formatada
-      setDateOut(formatDate(selectedDate));
-      // Opcional: Se a data de saída for anterior à data de entrada atual, ajusta a data de entrada
-      if (new Date(selectedDate) < new Date(dateIn)) {
-        setDateIn(formatDate(selectedDate));
+    // 3. Fazer a requisição POST para o backend
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/packages/generate`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${userToken}`, // Usa o token recuperado
+        },
+        body: JSON.stringify(packageParams),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || `Erro do servidor: ${response.status}`);
       }
+
+      const responseData = await response.json();
+      console.log('Pacote gerado pelo backend (Resposta API):', responseData.package);
+
+      // 4. Navegar para a tela de confirmação/detalhes com os dados do pacote gerado
+      navigation.navigate("Confirmation", { packageData: responseData.package });
+
+    } catch (error) {
+      console.error("Erro ao gerar pacote de viagem:", error);
+     Alert.alert("Erro", error.message || "Não foi possível gerar o pacote de viagem. Tente novamente.");
+    } finally {
+      setLoadingNavigation(false); // Desativa o indicador de carregamento
     }
   };
 
 
   return (
-    <View style={styles.container}>
-      <CloudBackReverseLow style={styles.cloudBackground} />
-      <View style={styles.formWrapper}>
-        <View style={styles.inputGroup}>
-          <Text style={styles.label}>Destino</Text>
-          <TextInput
-            style={styles.searchInput}
-            placeholder="Digite o destino"
-            value={destination}
-            onChangeText={text => {
-              setDestination(text);
-            }}
-          />
-          {/* MODIFICAÇÃO: Renderiza sugestões ou indicador de carregamento */}
-          {showSuggestionsDropdown && (destination.length >= 2 || loadingSuggestions) && ( // Exibe se o dropdown deve aparecer E (o usuário digitou o suficiente OU está carregando)
-            <View style={styles.suggestionsBox}>
-              {loadingSuggestions ? (
-                <ActivityIndicator size="small" color="#0000ff" /> // Indicador de carregamento
-              ) : fetchedSuggestions.length > 0 ? (
-                fetchedSuggestions.map((d, index) => ( // Mapeia as sugestões recebidas da API
-                  <TouchableOpacity
-                    key={index}
-                    onPress={() => {
-                      setDestination(d); // Define o destino com a sugestão selecionada
-                      setShowSuggestionsDropdown(false); // Oculta o dropdown
-                      setFetchedSuggestions([]); // Limpa as sugestões (opcional, mas boa prática)
-                    }}
-                  >
-                    <Text style={styles.suggestion}>{d}</Text>
-                  </TouchableOpacity>
-                ))
-              ) : (
-                // MODIFICAÇÃO: Mensagem quando não há sugestões e não está carregando
-                destination.length >= 2 && !loadingSuggestions && (
-                  <Text style={styles.suggestion}>Nenhuma sugestão encontrada.</Text>
-                )
-              )}
-            </View>
+    <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
+      <Text style={styles.title}>Planeje sua Viagem</Text>
+
+      {/* Input de Destino */}
+      <Text style={styles.label}>Destino:</Text>
+      <TextInput
+        style={styles.input}
+        placeholder="Digite o destino (ex: São Paulo)"
+        value={destination}
+        onChangeText={(text) => {
+          setDestination(text);
+          // showSuggestions é controlado pelo useEffect para só aparecer com 3+ caracteres
+        }}
+        onFocus={() => destination.length >= 3 && setDestinationSuggestions.length > 0 && setShowSuggestions(true)}
+        onBlur={() => setTimeout(() => setShowSuggestions(false), 200)} // Pequeno atraso para permitir clique
+      />
+      {loadingSuggestions && <ActivityIndicator size="small" color="#007bff" />}
+      {showSuggestions && destinationSuggestions.length > 0 && (
+        <View style={styles.suggestionsContainer}>
+          {destinationSuggestions.map((item, index) => (
+            <TouchableOpacity
+              key={index}
+              style={styles.suggestionItem}
+              onPress={() => handleDestinationSelect(item.nome)}
+            >
+              <Text style={styles.suggestionText}>{item.nome}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+      )}
+
+      {/* Datas de Ida e Volta */}
+      <View style={styles.datePickerContainer}>
+        <View style={styles.dateInputWrapper}>
+          <Text style={styles.label}>Data de Ida:</Text>
+          <TouchableOpacity onPress={() => setShowDateInPicker(true)} style={styles.dateInput}>
+            <Text style={styles.dateInputText}>{dateIn || 'Selecionar Data'}</Text>
+          </TouchableOpacity>
+          {showDateInPicker && (
+            <DateTimePicker
+              value={dateIn ? new Date(dateIn.split('/').reverse().join('-')) : new Date()}
+              mode="date"
+              display="default"
+              onChange={handleDateInChange}
+            />
           )}
         </View>
 
-        <View style={styles.row}>
-          <DateInputBox label="Entrada" value={dateIn} onPress={() => setShowDateInPicker(true)} />
-          <DateInputBox label="Saída" value={dateOut} onPress={() => setShowDateOutPicker(true)} />
-        </View>
-        <View style={styles.row}>
-          <InputBox
-            label="Adultos"
-            value={String(adults)}
-            onChangeText={text => setAdults(Number(text))}
-            keyboardType="numeric"
-          />
-          <InputBox
-            label="Crianças"
-            value={String(children)}
-            onChangeText={text => setChildren(Number(text))}
-            keyboardType="numeric"
-          />
-        </View>
-        <View style={styles.sliderWrapper}>
-          <BudgetSlider budget={budget} setBudget={setBudget} />
-        </View>
-      </View>
-      <View style={styles.imageAndButtonWrapper}>
-        <Image source={getDestinationImage(destination)} style={styles.destinationImage} />
-        <View style={styles.buttonContainer}>
-          <Button text="Editar" style={styles.editButton} />
-          <Button
-            text="Concluir"
-            style={styles.confirmButton}
-            onPress={handleConcluir}
-          />
-          {loadingNavigation && (
-            <View style={styles.loadingNavigation}>
-              <ActivityIndicator color="#fff" />
-            </View>
+        <View style={styles.dateInputWrapper}>
+          <Text style={styles.label}>Data de Volta:</Text>
+          <TouchableOpacity onPress={() => setShowDateOutPicker(true)} style={styles.dateInput}>
+            <Text style={styles.dateInputText}>{dateOut || 'Selecionar Data'}</Text>
+          </TouchableOpacity>
+          {showDateOutPicker && (
+            <DateTimePicker
+              value={dateOut ? new Date(dateOut.split('/').reverse().join('-')) : new Date()}
+              mode="date"
+              display="default"
+              onChange={handleDateOutChange}
+              minimumDate={dateIn ? new Date(dateIn.split('/').reverse().join('-')) : new Date()} // Garante que a data de volta seja >= data de ida
+            />
           )}
         </View>
       </View>
-      {showDateInPicker && (
-        <DateTimePicker
-          // MODIFICAÇÃO: Define o valor inicial do picker para a data atualmente selecionada ou a data atual
-          value={new Date(dateIn) || new Date()}
-          mode="date"
-          display={Platform.OS === "ios" ? "spinner" : "default"}
-          onChange={onDateInChange} // Usando a nova função de callback
-        />
-      )}
-      {showDateOutPicker && (
-        <DateTimePicker
-          // MODIFICAÇÃO: Define o valor inicial do picker para a data atualmente selecionada ou a data atual
-          value={new Date(dateOut) || new Date()}
-          mode="date"
-          display={Platform.OS === "ios" ? "spinner" : "default"}
-          onChange={onDateOutChange} // Usando a nova função de callback
-        />
-      )}
-      <Navbar style={styles.navbar} />
-    </View>
+
+      {/* Seletores de Adultos e Crianças */}
+      <View style={styles.pickerContainer}>
+        <View style={styles.pickerWrapper}>
+          <Text style={styles.label}>Adultos:</Text>
+          <Picker
+            selectedValue={adults}
+            style={styles.picker}
+            onValueChange={(itemValue) => setAdults(itemValue)}
+          >
+            {[...Array(10).keys()].map((i) => (
+              <Picker.Item key={i + 1} label={`${i + 1}`} value={i + 1} />
+            ))}
+          </Picker>
+        </View>
+
+        <View style={styles.pickerWrapper}>
+          <Text style={styles.label}>Crianças:</Text>
+          <Picker
+            selectedValue={children}
+            style={styles.picker}
+            onValueChange={(itemValue) => setChildren(itemValue)}
+          >
+            {[...Array(10).keys()].map((i) => (
+              <Picker.Item key={i} label={`${i}`} value={i} />
+            ))}
+          </Picker>
+        </View>
+      </View>
+
+      {/* Slider de Orçamento */}
+      <BudgetSlider budget={budget} setBudget={setBudget} />
+
+      {/* Botão Concluir */}
+      <TouchableOpacity style={styles.button} onPress={handleConcluir} disabled={loadingNavigation}>
+        {loadingNavigation ? (
+          <ActivityIndicator color="#fff" />
+        ) : (
+          <Text style={styles.buttonText}>Concluir</Text>
+        )}
+      </TouchableOpacity>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f0f0f0"
+    backgroundColor: '#f8f9fa',
+    padding: 20,
   },
-  cloudBackground: {
-    position: "absolute",
-    top: 260,
-    left: 0,
-    right: 0,
-    zIndex: 0
+  contentContainer: {
+    paddingBottom: 40,
   },
-  formWrapper: {
-    width: "100%",
-    paddingVertical: 20,
-    backgroundColor: "#fff",
-    alignItems: "center",
-    zIndex: 1
-  },
-  inputGroup: {
-    alignItems: "center",
-    width: "90%",
-    position: "relative"
+  title: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: '#343a40',
+    marginBottom: 30,
+    textAlign: 'center',
   },
   label: {
     fontSize: 16,
-    fontWeight: "bold",
-    marginVertical: 5
+    fontWeight: '600',
+    color: '#495057',
+    marginBottom: 8,
+    marginTop: 15,
   },
   input: {
-    width: 145,
-    height: 53,
+    backgroundColor: '#fff',
     borderWidth: 1,
-    borderColor: "#ccc",
+    borderColor: '#ced4da',
     borderRadius: 8,
-    textAlign: "center",
-    backgroundColor: "#fff",
-    marginVertical: 5
+    padding: 12,
+    fontSize: 16,
+    color: '#343a40',
   },
-  searchInput: {
-    width: 322,
-    height: 53,
+  suggestionsContainer: {
+    backgroundColor: '#fff',
+    borderColor: '#ced4da',
     borderWidth: 1,
-    borderColor: "#ccc",
     borderRadius: 8,
-    textAlign: "center",
-    backgroundColor: "#fff",
-    marginVertical: 5
-  },
-  suggestionsBox: {
-    position: "absolute",
-    top: 75, // Ajuste conforme necessário para ficar abaixo do TextInput
-    backgroundColor: "white",
-    borderWidth: 1,
-    borderColor: "#ccc",
-    borderRadius: 5,
-    padding: 5,
-    width: 322, // MODIFICAÇÃO: Aumenta a largura para corresponder ao searchInput
-    maxHeight: 200, // MODIFICAÇÃO: Adiciona altura máxima e scroll
-    overflow: 'hidden', // MODIFICAÇÃO: Para garantir que o scroll funcione
-    zIndex: 10 // Garante que fique acima de outros elementos
-  },
-  suggestion: {
-    padding: 10, // MODIFICAÇÃO: Aumenta o padding para melhor toque
-    fontSize: 16, // MODIFICAÇÃO: Ajusta o tamanho da fonte
-    borderBottomWidth: 0.5,
-    borderBottomColor: '#eee',
-    width: '100%' // MODIFICAÇÃO: Garante que o touchable ocupe a largura total
-  },
-  row: {
-    flexDirection: "row",
-    justifyContent: "space-around",
-    width: "90%",
-    paddingVertical: 5
-  },
-  box: {
-    alignItems: "center"
-  },
-  sliderWrapper: {
     marginTop: 5,
-    width: "90%"
+    maxHeight: 200,
   },
-  imageAndButtonWrapper: {
-    width: "100%",
-    backgroundColor: "#3A8FFF",
-    alignItems: "center",
-    paddingVertical: 20,
-    paddingBottom: 100,
-    paddingTop: 70,
-    position: "relative",
+  suggestionItem: {
+    padding: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#e9ecef',
   },
-  destinationImage: {
-    width: "80%",
-    height: 180,
-    borderRadius: 10,
-    marginBottom: 15
+  suggestionText: {
+    fontSize: 16,
+    color: '#495057',
   },
-  buttonContainer: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    width: "70%",
-    height: 40,
-    marginTop: 10,
-    alignItems: "center",
+  datePickerContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 15,
+  },
+  dateInputWrapper: {
+    flex: 1,
+    marginHorizontal: 5,
+  },
+  dateInput: {
+    backgroundColor: '#fff',
+    borderWidth: 1,
+    borderColor: '#ced4da',
+    borderRadius: 8,
+    padding: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  dateInputText: {
+    fontSize: 16,
+    color: '#343a40',
+  },
+  pickerContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 15,
+  },
+  pickerWrapper: {
+    flex: 1,
+    marginHorizontal: 5,
+  },
+  picker: {
+    backgroundColor: '#fff',
+    borderWidth: 1,
+    borderColor: '#ced4da',
+    borderRadius: 8,
+    height: 50,
+  },
+  button: {
+    backgroundColor: '#007bff',
+    paddingVertical: 15,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginTop: 30,
+    elevation: 3, // Sombra para Android
+    shadowColor: '#000', // Sombra para iOS
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
   },
   buttonText: {
-    color: "#fff",
-    fontSize: 15,
-    fontWeight: "bold"
-  },
-  editButton: {
-    backgroundColor: "#3A8FFF",
-    borderWidth: 0.5,
-    borderColor: "#fff",
-    paddingVertical: 10,
-    width: 95,
-    height: 50,
-    paddingHorizontal: 20,
-    borderRadius: 8,
-    justifyContent: "center",
-    alignItems: "center"
-  },
-  confirmButton: {
-    width: 95,
-    height: 50,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "#1A5FB4",
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    borderRadius: 8,
-    elevation: 3
-  },
-  navbar: {
-    position: "absolute",
-    bottom: 0,
-    width: "100%"
-  },
-  loadingNavigation: {
-    marginLeft: 10,
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: 'bold',
   },
 });
