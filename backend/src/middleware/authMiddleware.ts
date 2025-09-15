@@ -2,15 +2,15 @@
 import { NextFunction, Request, RequestHandler, Response } from 'express';
 import jwt from 'jsonwebtoken';
 
+// Esta declaração global é perfeita!
 declare global {
   namespace Express {
     interface Request {
-      userId?: number;
+      userId?: number; // Agora userId é uma propriedade opcional em QUALQUER Request
     }
   }
 }
 
-// USE A MESMA CHAVE SECRETA QUE VOCÊ DEFINIU EM authRoutes.ts e no seu .env!
 const JWT_SECRET = process.env.JWT_SECRET || 'fallback_secret_se_nao_encontrar_no_env';
 
 const verifyToken: RequestHandler = (req: Request, res: Response, next: NextFunction) => {
@@ -25,11 +25,10 @@ const verifyToken: RequestHandler = (req: Request, res: Response, next: NextFunc
 
   try {
     const decoded = jwt.verify(token, JWT_SECRET) as { id: number };
-    req.userId = decoded.id;
+    req.userId = decoded.id; // Aqui, você garante que userId é setado
     next();
   } catch (error) {
     console.error('Erro na verificação do token:', error);
-    // Garanta que a resposta de erro seja JSON
     res.status(403).json({ message: 'Não autorizado, token inválido ou expirado.' });
     return;
   }

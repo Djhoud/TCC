@@ -50,7 +50,7 @@ export default function ConfirmationScreen({ route, navigation }) {
   }, [route.params]);
 
   const goHome = () => {
-    navigation.navigate("Home");
+    navigation.navigate("Main");
   };
 
   const goToEdit = () => {

@@ -146,7 +146,7 @@ export const generateTravelPackage = async ({
 
     if (accommodations.length > 0) {
         generatedPackage.items.accommodation = accommodations[0];
-        currentTotalCost += accommodations[0].preco * actualNights * (adults + children); // Custo total da hospedagem para o grupo e noites
+        currentTotalCost += parseFloat(accommodations[0].preco) * actualNights * (adults + children); // Custo total da hospedagem para o grupo e noites
     }
 
 
@@ -199,7 +199,7 @@ export const generateTravelPackage = async ({
     if (transports.length > 0) {
         const selectedTransport = transports[0];
         generatedPackage.items.destinationTransport = selectedTransport;
-        currentTotalCost += selectedTransport.preco_estimado * (adults + children) * 2; // Ida e volta para todos
+        currentTotalCost += parseFloat(selectedTransport.preco_estimado) * (adults + children) * 2; // Ida e volta para todos
     }
 
 

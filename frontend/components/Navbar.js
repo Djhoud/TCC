@@ -18,7 +18,7 @@ export default function Navbar() {
       <TouchableOpacity onPress={() => navigation.navigate("Coffee")}>
         <Image source={require("../assets/images/icons/coffee.png")} style={styles.navIcon} />
       </TouchableOpacity>
-      <TouchableOpacity onPress={() => navigation.navigate("User")}>
+      <TouchableOpacity onPress={() => navigation.navigate("Profile")}>
         <Image source={require("../assets/images/icons/user.png")} style={styles.navIcon} />
       </TouchableOpacity>
     </View>

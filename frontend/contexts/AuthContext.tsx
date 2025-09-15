@@ -3,9 +3,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import React, { createContext, ReactNode, useContext, useEffect, useState } from "react";
 import { Alert } from 'react-native'; // Certifique-se de importar Alert
 
-// Use process.env.API_BASE_URL para acessar a variável de ambiente.
-// Lembre-se que para o Expo, variáveis de ambiente no .env devem começar com EXPO_PUBLIC_
-// Por exemplo: EXPO_PUBLIC_API_BASE_URL=https://seungrok.ngrok-free.app
+
 const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL; // Ajuste o nome da variável se for diferente no seu .env
 
 interface AuthContextType {

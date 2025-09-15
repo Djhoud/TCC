@@ -1,5 +1,5 @@
 // frontend/app/screens/TravelBudgetScreen.js
-import AsyncStorage from '@react-native-async-storage/async-storage'; // <<-- Adicione este import
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { Picker } from '@react-native-picker/picker';
 import { useNavigation } from '@react-navigation/native';
@@ -26,11 +26,11 @@ export default function TravelBudgetScreen() {
   const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL;
 
   const [destination, setDestination] = useState('');
-  const [budget, setBudget] = useState(1000); // Valor inicial do orçamento
+  const [budget, setBudget] = useState(1000);
   const [adults, setAdults] = useState(1);
   const [children, setChildren] = useState(0);
-  const [dateIn, setDateIn] = useState(''); // Formato DD/MM/YY
-  const [dateOut, setDateOut] = useState(''); // Formato DD/MM/YY
+  const [dateIn, setDateIn] = useState('');
+  const [dateOut, setDateOut] = useState('');
   const [showDateInPicker, setShowDateInPicker] = useState(false);
   const [showDateOutPicker, setShowDateOutPicker] = useState(false);
 
@@ -38,28 +38,26 @@ export default function TravelBudgetScreen() {
   const [loadingSuggestions, setLoadingSuggestions] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
 
-  const [loadingNavigation, setLoadingNavigation] = useState(false); // Novo estado para carregamento
+  const [loadingNavigation, setLoadingNavigation] = useState(false);
 
-  // Função para mapear cidades a imagens (se ainda for usar localmente)
-  const getDestinationImage = (cityName) => {
-    switch (cityName.toLowerCase()) {
-      case 'rio de janeiro':
-        return rioImage;
-      case 'são paulo':
-        return spImage;
-      case 'belo horizonte':
-        return bhImage;
-      default:
-        return null; // Ou uma imagem padrão
-    }
+  const [minBudgetSlider, setMinBudgetSlider] = useState(0);
+  const [maxBudgetSlider, setMaxBudgetSlider] = useState(5000);
+  const [fetchingBudgetRange, setFetchingBudgetRange] = useState(false);
+
+  // --- Funções Auxiliares (mantidas ou ajustadas se necessário) ---
+  const getDestinationImage = (dest) => {
+    // Implemente sua lógica de imagem aqui, se ainda usar.
+    // Exemplo:
+    if (dest.includes('Rio')) return rioImage;
+    if (dest.includes('São Paulo')) return spImage;
+    return null;
   };
 
-  // Função para formatar a data de Date para DD/MM/YY
   const formatDate = (date) => {
-    if (!date) return '';
-    const day = String(date.getDate()).padStart(2, '0');
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const year = String(date.getFullYear()).slice(-2); // Pega os 2 últimos dígitos
+    const d = new Date(date);
+    const day = String(d.getDate()).padStart(2, '0');
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const year = String(d.getFullYear()).slice(-2); // Pega os últimos 2 dígitos do ano
     return `${day}/${month}/${year}`;
   };
 
@@ -67,6 +65,11 @@ export default function TravelBudgetScreen() {
     const currentDate = selectedDate || new Date();
     setShowDateInPicker(false);
     setDateIn(formatDate(currentDate));
+
+    // Se a data de saída for anterior à nova data de entrada, ajusta a data de saída
+    if (dateOut && new Date(dateOut.split('/').reverse().join('-')) < currentDate) {
+      setDateOut(formatDate(currentDate));
+    }
   };
 
   const handleDateOutChange = (event, selectedDate) => {
@@ -75,87 +78,121 @@ export default function TravelBudgetScreen() {
     setDateOut(formatDate(currentDate));
   };
 
-  // Efeito para buscar sugestões de destino
+
+  // Efeito para buscar sugestões de destino E AGORA O RANGE DO ORÇAMENTO
   useEffect(() => {
-    const fetchDestinationSuggestions = async () => {
+    const fetchDestinationSuggestionsAndBudgetRange = async () => {
       if (destination.length < 3) {
         setDestinationSuggestions([]);
+        setMinBudgetSlider(0);
+        setMaxBudgetSlider(5000);
+        setBudget(1000);
         return;
       }
-      setLoadingSuggestions(true);
-     // ... dentro do useEffect, na função fetchDestinationSuggestions ...
 
-try {
-      const response = await fetch(`${API_BASE_URL}/api/cities/suggestions?search=${destination}`);
-      if (!response.ok) {
-        throw new Error(`Erro na API: ${response.status}`);
+      setLoadingSuggestions(true);
+      setFetchingBudgetRange(true);
+
+      let userToken = null;
+      try {
+        userToken = await AsyncStorage.getItem('userToken');
+        if (!userToken) {
+          console.warn("Token de usuário não encontrado para buscar sugestões e range de orçamento.");
+          Alert.alert("Erro de Autenticação", "Não foi possível carregar dados. Faça login novamente.");
+          return;
+        }
+      } catch (e) {
+        console.error("Erro ao recuperar token do AsyncStorage:", e);
+        return;
       }
-      const data = await response.json();
-      console.log("--- Frontend Debug (Sugestões) ---");
-      console.log("Dados de sugestões recebidos do backend:", data); // <<< VERIFIQUE ESTA LINHA
-      setDestinationSuggestions(data);
-      setShowSuggestions(true);
-    } catch (error) {
-      console.error('Erro ao buscar sugestões de destino:', error);
-    } finally {
-      setLoadingSuggestions(false);
-    }
+
+      // 1. Buscar sugestões de destino
+      try {
+        const response = await fetch(`${API_BASE_URL}/api/cities/suggestions?search=${destination}`);
+        if (!response.ok) {
+          throw new Error(`Erro na API de sugestões: ${response.status}`);
+        }
+        const data = await response.json();
+        setDestinationSuggestions(data);
+        setShowSuggestions(true);
+      } catch (error) {
+        console.error('Erro ao buscar sugestões de destino:', error);
+      } finally {
+        setLoadingSuggestions(false);
+      }
+
+      // 2. Buscar range de orçamento
+      try {
+        const budgetRangeResponse = await fetch(`${API_BASE_URL}/api/preferences/budget-range?destinationName=${encodeURIComponent(destination)}`, {
+          headers: { Authorization: `Bearer ${userToken}` },
+        });
+
+        if (!budgetRangeResponse.ok) {
+          const errorData = await budgetRangeResponse.json();
+          throw new Error(errorData.message || `Erro na API de range de orçamento: ${budgetRangeResponse.status}`);
+        }
+        const budgetRangeData = await budgetRangeResponse.json();
+        console.log("Range de Orçamento Recebido:", budgetRangeData);
+
+        const newMin = parseFloat(budgetRangeData.minBudget);
+        const newMax = parseFloat(budgetRangeData.maxBudget);
+
+        setMinBudgetSlider(newMin > 0 ? newMin : 100);
+        setMaxBudgetSlider(newMax > newMin ? newMax : 5000);
+        setBudget(newMin > 0 ? newMin : 100);
+
+      } catch (error) {
+        console.error('Erro ao buscar range de orçamento:', error);
+        setMinBudgetSlider(0);
+        setMaxBudgetSlider(5000);
+        setBudget(1000);
+      } finally {
+        setFetchingBudgetRange(false);
+      }
     };
 
     const handler = setTimeout(() => {
-      fetchDestinationSuggestions();
-    }, 500); // Atraso de 500ms para buscar sugestões
+      fetchDestinationSuggestionsAndBudgetRange();
+    }, 500);
 
-    return () => clearTimeout(handler); // Limpa o timeout anterior
+    return () => clearTimeout(handler);
   }, [destination, API_BASE_URL]);
 
- const handleDestinationSelect = (selectedDestination) => {
-  console.log("--- Frontend Debug (handleDestinationSelect) ---");
-  console.log("Sugestão selecionada:", selectedDestination); // <<-- MANTENHA ESTA LINHA
 
-  setDestination(selectedDestination);
-  setShowSuggestions(false); // Esconde as sugestões após a seleção
-};
+  const handleDestinationSelect = (selectedDestination) => {
+    setDestination(selectedDestination);
+    setShowSuggestions(false);
+  };
 
   const handleConcluir = async () => {
-    // 1. Validações básicas
-    if (!destination || destination.trim() === '') {
-      Alert.alert('Erro', 'Por favor, selecione um destino.');
-      return;
-    }
-    if (!dateIn || !dateOut) {
-      Alert.alert('Erro', 'Por favor, selecione as datas de ida e volta.');
-      return;
-    }
-    const dIn = new Date(dateIn.split('/').reverse().join('-')); // Converte para YYYY-MM-DD
-    const dOut = new Date(dateOut.split('/').reverse().join('-')); // Converte para YYYY-MM-DD
-    if (dIn > dOut) {
-      Alert.alert('Erro', 'A data de volta não pode ser anterior à data de ida.');
-      return;
-    }
-    if (adults === 0 && children === 0) {
-      Alert.alert('Erro', 'Pelo menos um adulto ou criança deve ser selecionado.');
-      return;
-    }
-    if (budget <= 0) {
-      Alert.alert('Erro', 'O orçamento deve ser maior que zero.');
+    if (!destination || !budget || !dateIn || !dateOut) {
+      Alert.alert("Campos Obrigatórios", "Por favor, preencha todos os campos.");
       return;
     }
 
-    // 2. Coletar todos os parâmetros
+    if (adults === 0 && children === 0) {
+      Alert.alert("Número de Pessoas", "Pelo menos um adulto ou criança deve ser selecionado.");
+      return;
+    }
+
+    const dateInObj = new Date(dateIn.split('/').reverse().join('-'));
+    const dateOutObj = new Date(dateOut.split('/').reverse().join('-'));
+
+    if (dateOutObj < dateInObj) {
+      Alert.alert("Datas Inválidas", "A data de volta não pode ser anterior à data de ida.");
+      return;
+    }
+
+    setLoadingNavigation(true);
+
     const packageParams = {
-      destino: destination,
       orcamento: budget,
+      destino: destination,
       adults: adults,
       children: children,
       dateIn: dateIn,
       dateOut: dateOut,
     };
-
-    console.log("--- Frontend Debug ---");
-    console.log("Dados do pacote a serem enviados:", packageParams);
-    console.log("Tipo do orçamento (budget):", typeof budget, "Valor:", budget);
-    console.log("Tipo do destino (destination):", typeof destination, "Valor:", destination);
 
     let userToken = null;
     try {
@@ -173,13 +210,12 @@ try {
       return;
     }
 
-    // 3. Fazer a requisição POST para o backend
     try {
       const response = await fetch(`${API_BASE_URL}/api/packages/generate`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${userToken}`, // Usa o token recuperado
+          'Authorization': `Bearer ${userToken}`,
         },
         body: JSON.stringify(packageParams),
       });
@@ -192,23 +228,20 @@ try {
       const responseData = await response.json();
       console.log('Pacote gerado pelo backend (Resposta API):', responseData.package);
 
-      // 4. Navegar para a tela de confirmação/detalhes com os dados do pacote gerado
       navigation.navigate("Confirmation", { packageData: responseData.package });
 
     } catch (error) {
       console.error("Erro ao gerar pacote de viagem:", error);
-     Alert.alert("Erro", error.message || "Não foi possível gerar o pacote de viagem. Tente novamente.");
+      Alert.alert("Erro", error.message || "Não foi possível gerar o pacote de viagem. Tente novamente.");
     } finally {
-      setLoadingNavigation(false); // Desativa o indicador de carregamento
+      setLoadingNavigation(false);
     }
   };
-
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
       <Text style={styles.title}>Planeje sua Viagem</Text>
 
-      {/* Input de Destino */}
       <Text style={styles.label}>Destino:</Text>
       <TextInput
         style={styles.input}
@@ -216,10 +249,9 @@ try {
         value={destination}
         onChangeText={(text) => {
           setDestination(text);
-          // showSuggestions é controlado pelo useEffect para só aparecer com 3+ caracteres
         }}
-        onFocus={() => destination.length >= 3 && setDestinationSuggestions.length > 0 && setShowSuggestions(true)}
-        onBlur={() => setTimeout(() => setShowSuggestions(false), 200)} // Pequeno atraso para permitir clique
+        onFocus={() => destination.length >= 3 && destinationSuggestions.length > 0 && setShowSuggestions(true)}
+        onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
       />
       {loadingSuggestions && <ActivityIndicator size="small" color="#007bff" />}
       {showSuggestions && destinationSuggestions.length > 0 && (
@@ -236,7 +268,6 @@ try {
         </View>
       )}
 
-      {/* Datas de Ida e Volta */}
       <View style={styles.datePickerContainer}>
         <View style={styles.dateInputWrapper}>
           <Text style={styles.label}>Data de Ida:</Text>
@@ -264,13 +295,12 @@ try {
               mode="date"
               display="default"
               onChange={handleDateOutChange}
-              minimumDate={dateIn ? new Date(dateIn.split('/').reverse().join('-')) : new Date()} // Garante que a data de volta seja >= data de ida
+              minimumDate={dateIn ? new Date(dateIn.split('/').reverse().join('-')) : new Date()}
             />
           )}
         </View>
       </View>
 
-      {/* Seletores de Adultos e Crianças */}
       <View style={styles.pickerContainer}>
         <View style={styles.pickerWrapper}>
           <Text style={styles.label}>Adultos:</Text>
@@ -299,11 +329,18 @@ try {
         </View>
       </View>
 
-      {/* Slider de Orçamento */}
-      <BudgetSlider budget={budget} setBudget={setBudget} />
+      {fetchingBudgetRange ? (
+        <ActivityIndicator size="large" color="#007bff" style={{ marginTop: 20 }} />
+      ) : (
+        <BudgetSlider
+          budget={budget}
+          setBudget={setBudget}
+          minimumValue={minBudgetSlider}
+          maximumValue={maxBudgetSlider}
+        />
+      )}
 
-      {/* Botão Concluir */}
-      <TouchableOpacity style={styles.button} onPress={handleConcluir} disabled={loadingNavigation}>
+      <TouchableOpacity style={styles.button} onPress={handleConcluir} disabled={loadingNavigation || fetchingBudgetRange}>
         {loadingNavigation ? (
           <ActivityIndicator color="#fff" />
         ) : (
@@ -407,8 +444,8 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     alignItems: 'center',
     marginTop: 30,
-    elevation: 3, // Sombra para Android
-    shadowColor: '#000', // Sombra para iOS
+    elevation: 3,
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.25,
     shadowRadius: 3.84,

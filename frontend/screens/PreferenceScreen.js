@@ -1,3 +1,4 @@
+import { useNavigation } from '@react-navigation/native'; // <-- Adicione esta importação
 import React, { useContext, useEffect, useState } from "react";
 import {
   ActivityIndicator,
@@ -11,10 +12,11 @@ import {
 import CloudBackReverse from "../components/CloudBackReverse";
 import { AuthContext } from "../contexts/AuthContext";
 
-const API_BASE_URL = 'https://3747-170-246-250-79.ngrok-free.app'; // EX: 'https://abcd-efgh-ijkl.ngrok-free.app'
+const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL;
 
 export default function PreferenceScreen() {
   const { token, userId, updatePreferencesStatus, signOut } = useContext(AuthContext);
+  const navigation = useNavigation(); // <-- Adicione esta linha para obter o objeto de navegação
 
   const [currentStep, setCurrentStep] = useState(0);
   const [preferences, setPreferences] = useState({
@@ -29,33 +31,23 @@ export default function PreferenceScreen() {
   const [fetchingExistingPrefs, setFetchingExistingPrefs] = useState(true);
 
   const steps = [
+    // ... (Seus steps, sem alterações)
     {
       title: "Qual tipo de acomodação você prefere?",
       field: "accommodation_preferences",
       options: [
-        "Hotel de Luxo",
-        "Pousada Aconchegante",
-        "Resort com Tudo Incluído",
-        "Hostel Econômico",
-        "Apartamento Alugado",
-        "Casa de Temporada",
-        "Camping",
-        "Glamping",
+        "Hotel de Luxo", "Pousada Aconchegante", "Resort com Tudo Incluído",
+        "Hostel Econômico", "Apartamento Alugado", "Casa de Temporada",
+        "Camping", "Glamping",
       ],
     },
     {
       title: "Qual seus tipos de comidas favoritas?",
       field: "food_preferences",
       options: [
-        "Culinária Local/Regional",
-        "Japonesa",
-        "Italiana",
-        "Brasileira Tradicional",
-        "Francesa",
-        "Mexicana",
-        "Indiana",
-        "Vegetariana/Vegana",
-        "Frutos do Mar",
+        "Culinária Local/Regional", "Japonesa", "Italiana",
+        "Brasileira Tradicional", "Francesa", "Mexicana",
+        "Indiana", "Vegetariana/Vegana", "Frutos do Mar",
         "Fast Food",
       ],
     },
@@ -63,67 +55,43 @@ export default function PreferenceScreen() {
       title: "Como você prefere se locomover no local?",
       field: "local_transport_preferences",
       options: [
-        "Carro Alugado",
-        "Transporte Público (Ônibus/Metrô)",
-        "Táxi/Aplicativo",
-        "Bicicleta",
-        "Caminhada",
-        "Moto",
-        "Trem Local",
-        "Barco/Ferry",
+        "Carro Alugado", "Transporte Público (Ônibus/Metrô)", "Táxi/Aplicativo",
+        "Bicicleta", "Caminhada", "Moto",
+        "Trem Local", "Barco/Ferry",
       ],
     },
     {
       title: "Como você prefere viajar até o local?",
       field: "destination_transport_preferences",
       options: [
-        "Avião",
-        "Carro Próprio",
-        "Ônibus de Viagem",
-        "Trem de Longa Distância",
-        "Cruzeiro",
-        "Van Compartilhada",
+        "Avião", "Carro Próprio", "Ônibus de Viagem",
+        "Trem de Longa Distância", "Cruzeiro", "Van Compartilhada",
       ],
     },
     {
       title: "Quais atividades você gosta de fazer?",
       field: "activity_preferences",
       options: [
-        "Tour Cultural/Histórico",
-        "Shows/Eventos",
-        "Vida Noturna/Baladas",
-        "Compras",
-        "Cinema/Teatro",
-        "Esportes Radicais",
-        "Relaxamento/Spa",
-        "Aventura na Natureza",
-        "Gastronomia/Degustação",
+        "Tour Cultural/Histórico", "Shows/Eventos", "Vida Noturna/Baladas",
+        "Compras", "Cinema/Teatro", "Esportes Radicais",
+        "Relaxamento/Spa", "Aventura na Natureza", "Gastronomia/Degustação",
       ],
     },
     {
       title: "Quais são seus principais interesses de viagem?",
       field: "interests",
       options: [
-        "Praia/Sol",
-        "Trilhas/Montanhas",
-        "Caminhada/Exploração",
-        "Museus/Galerias de Arte",
-        "Parques/Jardins",
-        "Natureza/Vida Selvagem",
-        "Cidades Grandes",
-        "Vilarejos Pequenos",
-        "História Antiga",
+        "Praia/Sol", "Trilhas/Montanhas", "Caminhada/Exploração",
+        "Museus/Galerias de Arte", "Parques/Jardins", "Natureza/Vida Selvagem",
+        "Cidades Grandes", "Vilarejos Pequenos", "História Antiga",
         "Modernidade/Tecnologia",
       ],
     },
   ];
 
+  // ... (Seu useEffect para loadUserPreferences, sem alterações)
   useEffect(() => {
     const loadUserPreferences = async () => {
-      if (!token || !userId) {
-        setFetchingExistingPrefs(false);
-        return;
-      }
       setFetchingExistingPrefs(true);
       try {
         const response = await fetch(`${API_BASE_URL}/api/preferences/user`, {
@@ -145,6 +113,7 @@ export default function PreferenceScreen() {
     };
     loadUserPreferences();
   }, [token, userId]);
+
 
   const handleSelect = (option) => {
     const field = steps[currentStep].field;
@@ -191,6 +160,13 @@ export default function PreferenceScreen() {
 
       await updatePreferencesStatus(true);
       Alert.alert("Sucesso", "Preferências salvas com sucesso!");
+      
+      // *** ADICIONE AQUI A NAVEGAÇÃO ***
+      // Isso substituirá a tela de preferências na pilha por 'Budget'.
+      // Se você quer que o usuário vá para a MainScreen após as preferências, mude para 'Main'.
+      // Se você quer que ele vá para a tela de busca de pacote, mude para 'Search'.
+      navigation.replace('Budget'); // ou 'Main' ou 'Search', dependendo do seu fluxo
+
     } catch (error) {
       Alert.alert("Erro", error.message || "Erro ao salvar preferências.");
     } finally {
@@ -212,6 +188,7 @@ export default function PreferenceScreen() {
     }
   };
 
+  // ... (Restante do seu componente, sem alterações)
   if (fetchingExistingPrefs) {
     return (
       <View style={styles.loadingContainer}>
@@ -291,6 +268,7 @@ export default function PreferenceScreen() {
   );
 }
 
+// ... (Seus estilos, sem alterações)
 const styles = StyleSheet.create({
   container: {
     flex: 1,
