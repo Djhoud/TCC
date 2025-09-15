@@ -1,3 +1,4 @@
+// package-routes.ts
 import { Request, Response, Router } from 'express';
 import { db } from '../database';
 import verifyToken from '../middleware/authMiddleware';
@@ -13,7 +14,6 @@ const preferenceToTableMap: { [key: string]: string } = {
     'destination_transport_preferences': 'transporte_para_cidade',
     'activity_preferences': 'atividades',
     'interests': 'interesses',
-    // Eventos serão tratados separadamente, pois podem cobrir várias categorias
 };
 
 // @route   POST /api/packages/generate
@@ -21,7 +21,7 @@ const preferenceToTableMap: { [key: string]: string } = {
 // @access  Private (requer autenticação)
 router.post('/generate', verifyToken, asyncHandler(async (req: Request, res: Response) => {
     const userId = req.userId;
-    const { orcamento, destino } = req.body; // Orçamento e nome do destino (ex: 'São Paulo')
+    const { orcamento, destino } = req.body;
 
     if (!userId || !orcamento || !destino) {
         return res.status(400).json({ message: 'Dados inválidos: orçamento e destino são obrigatórios.' });
@@ -29,7 +29,6 @@ router.post('/generate', verifyToken, asyncHandler(async (req: Request, res: Res
 
     const connection = await db.getConnection();
     try {
-        // 1. Obter as preferências do usuário
         const [userPrefsRows]: any = await connection.query(
             `SELECT op.categoria, op.descricao
              FROM preferencias_usuario pu
@@ -46,7 +45,6 @@ router.post('/generate', verifyToken, asyncHandler(async (req: Request, res: Res
             userPreferences[row.categoria].push(row.descricao);
         });
 
-        // 2. Obter o ID do destino
         const [destinationRows]: any = await connection.query(
             'SELECT id FROM destinos WHERE nome = ?',
             [destino]
@@ -82,12 +80,12 @@ router.post('/generate', verifyToken, asyncHandler(async (req: Request, res: Res
                  FROM hospedagem h
                  JOIN hoteis ho ON h.id = ho.id_hospedagem
                  WHERE h.cidade = ? AND h.categoria IN (${placeholders})
-                 AND ho.preco <= ? ORDER BY RAND() LIMIT 1`, // Seleciona 1 aleatoriamente que caiba no orçamento
-                [destino, ...accommodationPrefs, orcamento * 0.4] // Aloca 40% do orçamento para hospedagem
+                 AND ho.preco <= ? ORDER BY RAND() LIMIT 1`,
+                [destino, ...accommodationPrefs, orcamento * 0.4]
             );
             if (accommodations.length > 0) {
                 generatedPackage.items.accommodation = accommodations[0];
-                currentTotalCost += accommodations[0].preco;
+                currentTotalCost += parseFloat(accommodations[0].preco);
             }
         }
 
@@ -95,16 +93,15 @@ router.post('/generate', verifyToken, asyncHandler(async (req: Request, res: Res
         const foodPrefs = userPreferences['food_preferences'] || [];
         if (foodPrefs.length > 0) {
             const placeholders = foodPrefs.map(() => '?').join(',');
-            // Tenta pegar 2-3 opções de alimentação, priorizando as preferências
             const [foodOptions]: any = await connection.query(
                 `SELECT id, tipo, descricao, cidade, preco, categoria
                  FROM alimentacoes
                  WHERE id_destino = ? AND categoria IN (${placeholders})
-                 AND preco <= ? ORDER BY RAND() LIMIT 3`, // Tenta 3 opções
-                [destinationId, ...foodPrefs, orcamento * 0.15] // Aloca 15% do orçamento por refeição (média)
+                 AND preco <= ? ORDER BY RAND() LIMIT 3`,
+                [destinationId, ...foodPrefs, orcamento * 0.15]
             );
             generatedPackage.items.food = foodOptions;
-            foodOptions.forEach((f: any) => currentTotalCost += f.preco);
+            foodOptions.forEach((f: any) => currentTotalCost += parseFloat(f.preco));
         }
 
         // Lógica para selecionar Transporte para o Destino (ida e volta)
@@ -113,17 +110,17 @@ router.post('/generate', verifyToken, asyncHandler(async (req: Request, res: Res
             const placeholders = destTransportPrefs.map(() => '?').join(',');
             const [transports]: any = await connection.query(
                 `SELECT t.id, t.tipo, t.descricao,
-                        COALESCE(do.preco, da.preco) AS preco_total -- Pega o preço de detalhes_onibus ou detalhes_avioes
+                        COALESCE(do.preco, da.preco) AS preco_estimado
                  FROM transporte_para_cidade t
                  LEFT JOIN detalhes_onibus do ON t.id = do.id_transporte
                  LEFT JOIN detalhes_avioes da ON t.id = da.id_transporte
                  WHERE t.cidade_destino = ? AND t.tipo IN (${placeholders})
                  AND COALESCE(do.preco, da.preco) <= ? ORDER BY RAND() LIMIT 1`,
-                [destino, ...destTransportPrefs, orcamento * 0.3] // Aloca 30% do orçamento para transporte de destino (ida)
+                [destino, ...destTransportPrefs, orcamento * 0.3]
             );
             if (transports.length > 0) {
                 generatedPackage.items.destinationTransport = transports[0];
-                currentTotalCost += (transports[0].preco * 2); // Custo de ida e volta
+                currentTotalCost += parseFloat(transports[0].preco_estimado) * 2;
             }
         }
 
@@ -136,11 +133,11 @@ router.post('/generate', verifyToken, asyncHandler(async (req: Request, res: Res
                  FROM transporte_local
                  WHERE cidade = ? AND tipo IN (${placeholders})
                  AND preco <= ? ORDER BY RAND() LIMIT 1`,
-                [destino, ...localTransportPrefs, orcamento * 0.05] // Aloca 5% do orçamento para transporte local
+                [destino, ...localTransportPrefs, orcamento * 0.05]
             );
             if (localTransports.length > 0) {
                 generatedPackage.items.localTransport = localTransports[0];
-                currentTotalCost += localTransports[0].preco;
+                currentTotalCost += parseFloat(localTransports[0].preco);
             }
         }
 
@@ -155,24 +152,24 @@ router.post('/generate', verifyToken, asyncHandler(async (req: Request, res: Res
                 `SELECT id, nome, descricao, preco, categoria
                  FROM atividades
                  WHERE cidade = ? AND categoria IN (${placeholders})
-                 AND preco <= ? ORDER BY RAND() LIMIT 3`, // Tenta 3 atividades
-                [destino, ...combinedPrefs, orcamento * 0.1] // Aloca 10% do orçamento por atividade (média)
+                 AND preco <= ? ORDER BY RAND() LIMIT 3`,
+                [destino, ...combinedPrefs, orcamento * 0.1]
             );
             generatedPackage.items.activities = activities;
-            activities.forEach((a: any) => currentTotalCost += a.preco);
+            activities.forEach((a: any) => currentTotalCost += parseFloat(a.preco));
 
             const [interests]: any = await connection.query(
                 `SELECT id, nome, descricao, preco, categoria
                  FROM interesses
                  WHERE cidade = ? AND categoria IN (${placeholders})
-                 AND preco <= ? ORDER BY RAND() LIMIT 3`, // Tenta 3 interesses
-                [destino, ...combinedPrefs, orcamento * 0.05] // Aloca 5% do orçamento por interesse (média)
+                 AND preco <= ? ORDER BY RAND() LIMIT 3`,
+                [destino, ...combinedPrefs, orcamento * 0.05]
             );
             generatedPackage.items.interests = interests;
-            interests.forEach((i: any) => currentTotalCost += i.preco);
+            interests.forEach((i: any) => currentTotalCost += parseFloat(i.preco));
         }
 
-        // Lógica para selecionar Eventos (se houver e se encaixar)
+        // Lógica para selecionar Eventos
         const eventPrefs = userPreferences['activity_preferences']?.filter(p => p === 'Shows/Eventos' || p === 'Vida Noturna/Baladas' || p === 'Cinema/Teatro') || [];
         if (eventPrefs.length > 0) {
             const placeholders = eventPrefs.map(() => '?').join(',');
@@ -180,19 +177,19 @@ router.post('/generate', verifyToken, asyncHandler(async (req: Request, res: Res
                 `SELECT id, nome, descricao, preco, data_hora, categoria
                  FROM eventos
                  WHERE id_destino = ? AND categoria IN (${placeholders})
-                 AND preco <= ? ORDER BY RAND() LIMIT 1`, // Tenta 1 evento
-                [destinationId, ...eventPrefs, orcamento * 0.05] // Aloca 5% do orçamento para evento
+                 AND preco <= ? ORDER BY RAND() LIMIT 1`,
+                [destinationId, ...eventPrefs, orcamento * 0.05]
             );
             generatedPackage.items.events = events;
-            events.forEach((e: any) => currentTotalCost += e.preco);
+            events.forEach((e: any) => currentTotalCost += parseFloat(e.preco));
         }
 
-        generatedPackage.totalCost = currentTotalCost;
+        generatedPackage.totalCost = Number(currentTotalCost);
 
         res.status(200).json({
             message: 'Pacote gerado com sucesso!',
             package: generatedPackage,
-            userPreferences: userPreferences // Para depuração, pode remover depois
+            userPreferences: userPreferences
         });
 
     } catch (error) {
