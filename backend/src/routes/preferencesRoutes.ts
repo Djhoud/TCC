@@ -145,12 +145,10 @@ router.get('/budget-range', verifyToken, asyncHandler(async (req: Request, res: 
         return res.status(400).json({ message: "Nome do destino é obrigatório e deve ser uma string." });
     }
 
-    const connection = await db.getConnection();
     try {
         const { minBudget, maxBudget } = await getBudgetRangeForCategory(
             userId,
-            destinationName,
-            connection
+            destinationName
         );
 
         res.status(200).json({ minBudget, maxBudget });
@@ -158,8 +156,6 @@ router.get('/budget-range', verifyToken, asyncHandler(async (req: Request, res: 
     } catch (error) {
         console.error('Erro ao calcular range de orçamento na rota:', error);
         throw error;
-    } finally {
-        connection.release();
     }
 }));
 

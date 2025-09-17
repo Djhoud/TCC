@@ -3,28 +3,24 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { Picker } from '@react-native-picker/picker';
 import { useNavigation } from '@react-navigation/native';
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
   ScrollView,
   StyleSheet,
   Text,
-  TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
 import BudgetSlider from '../components/BudgetSlider';
-
-// Importe suas imagens se ainda as usar para sugestões de imagem
-import rioImage from '../assets/images/component/rio.png';
-import spImage from '../assets/images/component/saopaulo.png';
-// Adicione mais se precisar, ou remova se for usar URLs do backend
+import DestinationSearchInput from '../components/DestinationSearchInput'; // Importa o novo componente
 
 export default function TravelBudgetScreen() {
   const navigation = useNavigation();
   const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL;
 
+  // Manteremos apenas o estado do destino confirmado aqui
   const [destination, setDestination] = useState('');
   const [budget, setBudget] = useState(1000);
   const [adults, setAdults] = useState(1);
@@ -34,30 +30,17 @@ export default function TravelBudgetScreen() {
   const [showDateInPicker, setShowDateInPicker] = useState(false);
   const [showDateOutPicker, setShowDateOutPicker] = useState(false);
 
-  const [destinationSuggestions, setDestinationSuggestions] = useState([]);
-  const [loadingSuggestions, setLoadingSuggestions] = useState(false);
-  const [showSuggestions, setShowSuggestions] = useState(false);
-
   const [loadingNavigation, setLoadingNavigation] = useState(false);
 
   const [minBudgetSlider, setMinBudgetSlider] = useState(0);
   const [maxBudgetSlider, setMaxBudgetSlider] = useState(5000);
-  const [fetchingBudgetRange, setFetchingBudgetRange] = useState(false);
 
-  // --- Funções Auxiliares (mantidas ou ajustadas se necessário) ---
-  const getDestinationImage = (dest) => {
-    // Implemente sua lógica de imagem aqui, se ainda usar.
-    // Exemplo:
-    if (dest.includes('Rio')) return rioImage;
-    if (dest.includes('São Paulo')) return spImage;
-    return null;
-  };
-
+  // --- Funções Auxiliares ---
   const formatDate = (date) => {
     const d = new Date(date);
     const day = String(d.getDate()).padStart(2, '0');
     const month = String(d.getMonth() + 1).padStart(2, '0');
-    const year = String(d.getFullYear()).slice(-2); // Pega os últimos 2 dígitos do ano
+    const year = String(d.getFullYear()).slice(-2);
     return `${day}/${month}/${year}`;
   };
 
@@ -66,7 +49,6 @@ export default function TravelBudgetScreen() {
     setShowDateInPicker(false);
     setDateIn(formatDate(currentDate));
 
-    // Se a data de saída for anterior à nova data de entrada, ajusta a data de saída
     if (dateOut && new Date(dateOut.split('/').reverse().join('-')) < currentDate) {
       setDateOut(formatDate(currentDate));
     }
@@ -77,91 +59,17 @@ export default function TravelBudgetScreen() {
     setShowDateOutPicker(false);
     setDateOut(formatDate(currentDate));
   };
-
-
-  // Efeito para buscar sugestões de destino E AGORA O RANGE DO ORÇAMENTO
-  useEffect(() => {
-    const fetchDestinationSuggestionsAndBudgetRange = async () => {
-      if (destination.length < 3) {
-        setDestinationSuggestions([]);
-        setMinBudgetSlider(0);
-        setMaxBudgetSlider(5000);
-        setBudget(1000);
-        return;
-      }
-
-      setLoadingSuggestions(true);
-      setFetchingBudgetRange(true);
-
-      let userToken = null;
-      try {
-        userToken = await AsyncStorage.getItem('userToken');
-        if (!userToken) {
-          console.warn("Token de usuário não encontrado para buscar sugestões e range de orçamento.");
-          Alert.alert("Erro de Autenticação", "Não foi possível carregar dados. Faça login novamente.");
-          return;
-        }
-      } catch (e) {
-        console.error("Erro ao recuperar token do AsyncStorage:", e);
-        return;
-      }
-
-      // 1. Buscar sugestões de destino
-      try {
-        const response = await fetch(`${API_BASE_URL}/api/cities/suggestions?search=${destination}`);
-        if (!response.ok) {
-          throw new Error(`Erro na API de sugestões: ${response.status}`);
-        }
-        const data = await response.json();
-        setDestinationSuggestions(data);
-        setShowSuggestions(true);
-      } catch (error) {
-        console.error('Erro ao buscar sugestões de destino:', error);
-      } finally {
-        setLoadingSuggestions(false);
-      }
-
-      // 2. Buscar range de orçamento
-      try {
-        const budgetRangeResponse = await fetch(`${API_BASE_URL}/api/preferences/budget-range?destinationName=${encodeURIComponent(destination)}`, {
-          headers: { Authorization: `Bearer ${userToken}` },
-        });
-
-        if (!budgetRangeResponse.ok) {
-          const errorData = await budgetRangeResponse.json();
-          throw new Error(errorData.message || `Erro na API de range de orçamento: ${budgetRangeResponse.status}`);
-        }
-        const budgetRangeData = await budgetRangeResponse.json();
-        console.log("Range de Orçamento Recebido:", budgetRangeData);
-
-        const newMin = parseFloat(budgetRangeData.minBudget);
-        const newMax = parseFloat(budgetRangeData.maxBudget);
-
-        setMinBudgetSlider(newMin > 0 ? newMin : 100);
-        setMaxBudgetSlider(newMax > newMin ? newMax : 5000);
-        setBudget(newMin > 0 ? newMin : 100);
-
-      } catch (error) {
-        console.error('Erro ao buscar range de orçamento:', error);
-        setMinBudgetSlider(0);
-        setMaxBudgetSlider(5000);
-        setBudget(1000);
-      } finally {
-        setFetchingBudgetRange(false);
-      }
-    };
-
-    const handler = setTimeout(() => {
-      fetchDestinationSuggestionsAndBudgetRange();
-    }, 500);
-
-    return () => clearTimeout(handler);
-  }, [destination, API_BASE_URL]);
-
-
+  
+  // Função para receber o destino selecionado do componente filho
   const handleDestinationSelect = (selectedDestination) => {
-    setDestination(selectedDestination);
-    setShowSuggestions(false);
+      setDestination(selectedDestination);
+  };
+
+  // Função para receber o range de orçamento do componente filho
+  const handleBudgetRangeUpdate = (min, max, newBudget) => {
+      setMinBudgetSlider(min);
+      setMaxBudgetSlider(max);
+      setBudget(newBudget);
   };
 
   const handleConcluir = async () => {
@@ -242,31 +150,12 @@ export default function TravelBudgetScreen() {
     <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
       <Text style={styles.title}>Planeje sua Viagem</Text>
 
-      <Text style={styles.label}>Destino:</Text>
-      <TextInput
-        style={styles.input}
-        placeholder="Digite o destino (ex: São Paulo)"
-        value={destination}
-        onChangeText={(text) => {
-          setDestination(text);
-        }}
-        onFocus={() => destination.length >= 3 && destinationSuggestions.length > 0 && setShowSuggestions(true)}
-        onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
+      {/* Usando o novo componente */}
+      <DestinationSearchInput
+        API_BASE_URL={API_BASE_URL}
+        onDestinationSelect={handleDestinationSelect}
+        onBudgetRangeUpdate={handleBudgetRangeUpdate}
       />
-      {loadingSuggestions && <ActivityIndicator size="small" color="#007bff" />}
-      {showSuggestions && destinationSuggestions.length > 0 && (
-        <View style={styles.suggestionsContainer}>
-          {destinationSuggestions.map((item, index) => (
-            <TouchableOpacity
-              key={index}
-              style={styles.suggestionItem}
-              onPress={() => handleDestinationSelect(item.nome)}
-            >
-              <Text style={styles.suggestionText}>{item.nome}</Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-      )}
 
       <View style={styles.datePickerContainer}>
         <View style={styles.dateInputWrapper}>
@@ -329,18 +218,15 @@ export default function TravelBudgetScreen() {
         </View>
       </View>
 
-      {fetchingBudgetRange ? (
-        <ActivityIndicator size="large" color="#007bff" style={{ marginTop: 20 }} />
-      ) : (
-        <BudgetSlider
-          budget={budget}
-          setBudget={setBudget}
-          minimumValue={minBudgetSlider}
-          maximumValue={maxBudgetSlider}
-        />
-      )}
+      {/* Não há mais ActivityIndicator aqui, pois foi movido para o componente filho */}
+      <BudgetSlider
+        budget={budget}
+        setBudget={setBudget}
+        minimumValue={minBudgetSlider}
+        maximumValue={maxBudgetSlider}
+      />
 
-      <TouchableOpacity style={styles.button} onPress={handleConcluir} disabled={loadingNavigation || fetchingBudgetRange}>
+      <TouchableOpacity style={styles.button} onPress={handleConcluir} disabled={loadingNavigation}>
         {loadingNavigation ? (
           <ActivityIndicator color="#fff" />
         ) : (
@@ -373,32 +259,6 @@ const styles = StyleSheet.create({
     color: '#495057',
     marginBottom: 8,
     marginTop: 15,
-  },
-  input: {
-    backgroundColor: '#fff',
-    borderWidth: 1,
-    borderColor: '#ced4da',
-    borderRadius: 8,
-    padding: 12,
-    fontSize: 16,
-    color: '#343a40',
-  },
-  suggestionsContainer: {
-    backgroundColor: '#fff',
-    borderColor: '#ced4da',
-    borderWidth: 1,
-    borderRadius: 8,
-    marginTop: 5,
-    maxHeight: 200,
-  },
-  suggestionItem: {
-    padding: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#e9ecef',
-  },
-  suggestionText: {
-    fontSize: 16,
-    color: '#495057',
   },
   datePickerContainer: {
     flexDirection: 'row',
