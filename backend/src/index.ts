@@ -1,13 +1,12 @@
-// backend/src/index.ts
 import cors from 'cors';
 import dotenv from 'dotenv';
 import express, { ErrorRequestHandler } from 'express';
-import { db } from './database';
 import verifyToken from './middleware/authMiddleware';
 import authRoutes from './routes/authRoutes';
 import cityRoutes from './routes/cityRoutes';
-import packageRoutes from './routes/packageRoutes'; // Adicione esta linha!
+import packageRoutes from './routes/packageRoutes';
 import preferenceRoutes from './routes/preferencesRoutes';
+import profileRoutes from './routes/profileRoutes';
 
 dotenv.config();
 
@@ -22,26 +21,17 @@ app.use(cors({
 
 app.use(express.json());
 
-// Rotas de autenticação (não protegidas por verifyToken)
+// Rotas de autenticação (sem proteção)
 app.use('/auth', authRoutes);
 
 // Rotas protegidas por verifyToken
+app.use('/api/users', profileRoutes);
 app.use('/api/preferences', verifyToken, preferenceRoutes);
-app.use('/api/packages', verifyToken, packageRoutes); // Adicione/Confirme esta linha!
-app.use('/api', cityRoutes); // Rota de cidades (já estava aqui)
+app.use('/api/packages', verifyToken, packageRoutes);
+app.use('/api', cityRoutes);
 
 app.get('/', (req, res) => {
   res.send('Servidor rodando com sucesso! 🚀');
-});
-
-app.get('/api/users', verifyToken, async (req, res) => { // Protegendo esta rota também
-  try {
-    const [rows] = await db.query('SELECT * FROM usuarios');
-    res.json(rows);
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: 'Erro ao buscar usuários no banco' });
-  }
 });
 
 // Middleware de tratamento de erros (DEVE SER O ÚLTIMO app.use)

@@ -1,22 +1,30 @@
-// src/contexts/AuthContext.tsx
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import React, { createContext, ReactNode, useContext, useEffect, useState } from "react";
-import { Alert } from 'react-native'; // Certifique-se de importar Alert
+import { Alert } from 'react-native';
 
+const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL;
 
-const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL; // Ajuste o nome da variável se for diferente no seu .env
+interface User {
+  name: string;
+  email: string;
+  cpf: string | null;
+  photo: string | null;
+}
 
 interface AuthContextType {
   token: string | null;
   userId: number | null;
+  user: User | null;
   preferenciasCompletas: boolean | null;
-  signIn: (token: string, userId: number, prefsCompleted: boolean) => Promise<void>;
+  signIn: (token: string, userId: number, prefsCompleted: boolean, userProfile: User) => Promise<void>;
   signOut: () => Promise<void>;
   updatePreferencesStatus: (status: boolean) => Promise<void>;
   isLoading: boolean;
   error: string | null;
   login: (email: string, senha: string) => Promise<boolean>;
   register: (nome: string, email: string, senha: string) => Promise<boolean>;
+  fetchUser: () => Promise<void>;
+  API_BASE_URL: string; // Adicione esta propriedade
 }
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -24,13 +32,30 @@ export const AuthContext = createContext<AuthContextType | undefined>(undefined)
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [token, setToken] = useState<string | null>(null);
   const [userId, setUserId] = useState<number | null>(null);
+  const [user, setUser] = useState<User | null>(null); // Novo estado para os dados do usuário
   const [preferenciasCompletas, setPreferenciasCompletas] = useState<boolean | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
+  const fetchUser = async (userToken: string) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/users`, {
+        headers: { Authorization: `Bearer ${userToken}` },
+      });
+      if (response.ok) {
+        const userData: User = await response.json();
+        setUser(userData);
+      } else {
+        console.error('Erro ao buscar perfil do usuário:', response.status);
+      }
+    } catch (apiError) {
+      console.error('Erro de rede ao buscar perfil:', apiError);
+    }
+  };
+
   useEffect(() => {
     const loadStoredData = async () => {
-      setIsLoading(true); // Garante que isLoading está true ao iniciar
+      setIsLoading(true);
       try {
         const storedToken = await AsyncStorage.getItem("userToken");
         const storedUserId = await AsyncStorage.getItem("userId");
@@ -40,27 +65,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           setToken(storedToken);
           setUserId(parseInt(storedUserId, 10));
           setPreferenciasCompletas(storedPrefsCompleted === 'true');
-
-          // Verificação de status de preferência no backend (com try/catch para erros de rede)
-          try {
-            const response = await fetch(`${API_BASE_URL}/api/preferences/status`, {
-              headers: { Authorization: `Bearer ${storedToken}` },
-            });
-            const data = await response.json();
-            if (response.ok) {
-              setPreferenciasCompletas(data.hasCompletedPreferences);
-            } else {
-              if (response.status === 403 || response.status === 401) {
-                console.warn('Token inválido ou expirado durante verificação de preferências, fazendo logout.');
-                await signOut();
-              } else {
-                console.error('Erro ao verificar status de preferências:', data);
-              }
-            }
-          } catch (apiError: any) {
-            console.error('Erro de rede ao verificar status de preferências:', apiError);
-            // Não faz signOut automático aqui para evitar loops em caso de servidor offline
-          }
+          await fetchUser(storedToken); // Chama para buscar o perfil ao carregar
         }
       } catch (e: any) {
         setError("Erro ao carregar sessão anterior: " + e.message);
@@ -72,7 +77,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     loadStoredData();
   }, []);
 
-  const signIn = async (userToken: string, id: number, prefsCompleted: boolean) => {
+  const signIn = async (userToken: string, id: number, prefsCompleted: boolean, userProfile: User) => {
     try {
       await AsyncStorage.setItem('userToken', userToken);
       await AsyncStorage.setItem('userId', id.toString());
@@ -80,6 +85,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setToken(userToken);
       setUserId(id);
       setPreferenciasCompletas(prefsCompleted);
+      setUser(userProfile);
       setError(null);
       console.log('Dados de login salvos e contexto atualizado.');
     } catch (e: any) {
@@ -93,6 +99,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       await AsyncStorage.clear();
       setToken(null);
       setUserId(null);
+      setUser(null);
       setPreferenciasCompletas(false);
       setError(null);
       console.log('Sessão encerrada e AsyncStorage limpo.');
@@ -120,45 +127,34 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (!API_BASE_URL) {
         throw new Error("API_BASE_URL não configurado. Verifique seu arquivo .env");
       }
-      const loginUrl = `${API_BASE_URL}/auth/login`; // Confirme este endpoint no seu backend
-
-      console.log("--- DEBUG REQUISIÇÃO DE LOGIN (AuthContext) ---");
-      console.log("URL de Login:", loginUrl);
-      console.log("Dados enviados (email):", email); // Não logue senhas em produção!
+      const loginUrl = `${API_BASE_URL}/auth/login`;
 
       const response = await fetch(loginUrl, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, senha }),
       });
-
-      console.log("Status da Resposta de Login:", response.status);
 
       const responseData = await response.json();
 
       if (!response.ok) {
         const errorMessage = responseData.message || 'Falha no login: credenciais inválidas ou erro desconhecido.';
-        console.error("Erro na resposta do servidor de login:", responseData);
-        throw new Error(errorMessage); // Lança um erro para ser pego pelo catch
+        throw new Error(errorMessage);
       }
 
-      console.log("Login bem-sucedido. Resposta do Servidor:", responseData);
+      const userProfile: User = {
+        name: responseData.name,
+        email: responseData.email,
+        cpf: responseData.cpf,
+        photo: responseData.photo,
+      };
 
-      // Certifique-se de que o backend retorna `id` e `preferenciasCompletas`
-      await signIn(responseData.token, responseData.userId || responseData.id, responseData.preferenciasCompletas);
-
+      await signIn(responseData.token, responseData.userId || responseData.id, responseData.preferenciasCompletas, userProfile);
       return true;
     } catch (err: any) {
-      console.error("Erro na Requisição de Login (AuthContext - DETALHES):", err);
-      if (err.message.includes('Network request failed') || err.message.includes('API_BASE_URL não configurado')) {
-        setError(err.message); // Exibe o erro de rede ou de configuração
-        Alert.alert("Erro de Conexão", err.message || "Não foi possível conectar ao servidor. Verifique sua internet ou se o servidor está ativo.");
-      } else {
-        setError(err.message || 'Ocorreu um erro desconhecido ao tentar logar.');
-        Alert.alert("Erro no Login", err.message || "Ocorreu um erro desconhecido ao tentar logar.");
-      }
+      console.error("Erro na Requisição de Login:", err);
+      setError(err.message || 'Ocorreu um erro desconhecido ao tentar logar.');
+      Alert.alert("Erro", err.message || "Não foi possível conectar ao servidor.");
       return false;
     } finally {
       setIsLoading(false);
@@ -172,43 +168,34 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (!API_BASE_URL) {
         throw new Error("API_BASE_URL não configurado para registro. Verifique seu arquivo .env");
       }
-      const registerUrl = `${API_BASE_URL}/auth/register`; // Confirme este endpoint no seu backend
-
-      console.log("--- DEBUG REQUISIÇÃO DE REGISTRO (AuthContext) ---");
-      console.log("URL de Registro:", registerUrl);
-      console.log("Dados enviados (nome, email):", { nome, email });
+      const registerUrl = `${API_BASE_URL}/auth/register`;
 
       const response = await fetch(registerUrl, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ nome, email, senha }),
       });
-
-      console.log("Status da Resposta de Registro:", response.status);
 
       const responseData = await response.json();
 
       if (!response.ok) {
         const errorMessage = responseData.message || 'Falha no registro: por favor, tente novamente.';
-        console.error("Erro na resposta do servidor de registro:", responseData);
         throw new Error(errorMessage);
       }
 
-      console.log("Registro bem-sucedido. Resposta do Servidor:", responseData);
-      await signIn(responseData.token, responseData.userId || responseData.id, responseData.preferenciasCompletas);
+      const userProfile: User = {
+        name: responseData.name,
+        email: responseData.email,
+        cpf: responseData.cpf,
+        photo: responseData.photo,
+      };
 
+      await signIn(responseData.token, responseData.userId || responseData.id, responseData.preferenciasCompletas, userProfile);
       return true;
     } catch (err: any) {
-      console.error("Erro na Requisição de Registro (AuthContext - DETALHES):", err);
-      if (err.message.includes('Network request failed') || err.message.includes('API_BASE_URL não configurado')) {
-        setError(err.message);
-        Alert.alert("Erro de Conexão", err.message || "Não foi possível conectar ao servidor. Verifique sua internet ou se o servidor está ativo.");
-      } else {
-        setError(err.message || 'Ocorreu um erro desconhecido ao tentar registrar.');
-        Alert.alert("Erro no Registro", err.message || "Ocorreu um erro desconhecido ao tentar registrar.");
-      }
+      console.error("Erro na Requisição de Registro:", err);
+      setError(err.message || 'Ocorreu um erro desconhecido ao tentar registrar.');
+      Alert.alert("Erro", err.message || "Não foi possível conectar ao servidor.");
       return false;
     } finally {
       setIsLoading(false);
@@ -219,6 +206,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     <AuthContext.Provider value={{
       token,
       userId,
+      user, // Adicione o novo estado do usuário
       preferenciasCompletas,
       signIn,
       signOut,
@@ -227,6 +215,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       error,
       login,
       register,
+      fetchUser: () => fetchUser(token || ''), // Garante que a função é tipada
+      API_BASE_URL: API_BASE_URL || '' // Passa a URL para o contexto
     }}>
       {children}
     </AuthContext.Provider>
