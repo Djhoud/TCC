@@ -1,4 +1,5 @@
 // frontend/app/screens/TravelBudgetScreen.js
+// frontend/app/screens/TravelBudgetScreen.js
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { useNavigation } from '@react-navigation/native';
@@ -6,14 +7,18 @@ import React, { useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
+  Image, // <--- ADICIONADO!
   ScrollView,
   StyleSheet,
   Text,
+  TextInput, // <--- ADICIONADO!
   TouchableOpacity,
   View,
 } from 'react-native';
 import BudgetSlider from '../components/BudgetSlider';
 import DestinationSearchInput from '../components/DestinationSearchInput'; // Importa o novo componente
+
+// ... (O restante do seu código)
 
 export default function TravelBudgetScreen() {
   const navigation = useNavigation();

@@ -51,9 +51,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         headers: { Authorization: `Bearer ${userToken}` },
       });
 
-      if (response.ok) {
-        const userData: User = await response.json();
-        setUser(userData);
+if (response.ok) {
+    const userData: User = await response.json();
+    console.log('Dados do Usuário Recebidos:', userData); // <--- Adicione este log!
+    setUser(userData);
       } else if (response.status === 401) {
         // Se o token estiver expirado/inválido, força o logout para recadastrar
         console.error('Token expirado ou inválido (401). Forçando signOut.');

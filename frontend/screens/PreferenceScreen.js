@@ -165,7 +165,7 @@ export default function PreferenceScreen() {
       // Isso substituirá a tela de preferências na pilha por 'Budget'.
       // Se você quer que o usuário vá para a MainScreen após as preferências, mude para 'Main'.
       // Se você quer que ele vá para a tela de busca de pacote, mude para 'Search'.
-      navigation.replace('Budget'); // ou 'Main' ou 'Search', dependendo do seu fluxo
+      navigation.replace('Main'); // ou 'Main' ou 'Search', dependendo do seu fluxo
 
     } catch (error) {
       Alert.alert("Erro", error.message || "Erro ao salvar preferências.");
