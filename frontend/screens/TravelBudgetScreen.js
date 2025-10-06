@@ -1,7 +1,6 @@
 // frontend/app/screens/TravelBudgetScreen.js
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import DateTimePicker from '@react-native-community/datetimepicker';
-import { Picker } from '@react-native-picker/picker';
 import { useNavigation } from '@react-navigation/native';
 import React, { useState } from 'react';
 import {
@@ -147,129 +146,191 @@ export default function TravelBudgetScreen() {
   };
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
-      <Text style={styles.title}>Planeje sua Viagem</Text>
-
-      {/* Usando o novo componente */}
-      <DestinationSearchInput
-        API_BASE_URL={API_BASE_URL}
-        onDestinationSelect={handleDestinationSelect}
-        onBudgetRangeUpdate={handleBudgetRangeUpdate}
-      />
-
-      <View style={styles.datePickerContainer}>
-        <View style={styles.dateInputWrapper}>
-          <Text style={styles.label}>Data de Ida:</Text>
-          <TouchableOpacity onPress={() => setShowDateInPicker(true)} style={styles.dateInput}>
-            <Text style={styles.dateInputText}>{dateIn || 'Selecionar Data'}</Text>
-          </TouchableOpacity>
-          {showDateInPicker && (
-            <DateTimePicker
-              value={dateIn ? new Date(dateIn.split('/').reverse().join('-')) : new Date()}
-              mode="date"
-              display="default"
-              onChange={handleDateInChange}
+    <View style={styles.container}>
+      {/* ScrollView cobre a área de INPUTS */}
+      <ScrollView contentContainerStyle={styles.scrollContent}>
+        
+        {/* === ÁREA BRANCA (INPUTS) === */}
+        <View style={styles.whiteArea}>
+          
+          {/* Input de Destino - Replicando o visual do protótipo */}
+          <View style={styles.destinationContainer}>
+            <Text style={styles.indoParaLabel}>Indo Para</Text>
+            <DestinationSearchInput
+              API_BASE_URL={API_BASE_URL}
+              onDestinationSelect={handleDestinationSelect}
+              onBudgetRangeUpdate={handleBudgetRangeUpdate}
+              initialValue={destination}
             />
-          )}
+          </View>
+
+          {/* Datas em duas colunas */}
+          <View style={styles.inputRow}>
+            {/* Data de Entrada */}
+            <TouchableOpacity onPress={() => setShowDateInPicker(true)} style={styles.datePickerButton}>
+              <View style={styles.inputField}>
+                <Text style={styles.dateLabel}>Entrada</Text>
+                <Text style={styles.dateText}>{dateIn || '05/09/24'}</Text>
+              </View>
+            </TouchableOpacity>
+
+            {/* Data de Saída */}
+            <TouchableOpacity onPress={() => setShowDateOutPicker(true)} style={styles.datePickerButton}>
+              <View style={styles.inputField}>
+                <Text style={styles.dateLabel}>Saída</Text>
+                <Text style={styles.dateText}>{dateOut || '05/09/24'}</Text>
+              </View>
+            </TouchableOpacity>
+          </View>
+
+          {/* Pessoas em duas colunas */}
+          <View style={styles.inputRow}>
+            {/* Adultos */}
+            <View style={styles.peopleInput}>
+              <View style={styles.inputField}>
+                <Text style={styles.dateLabel}>Adultos</Text>
+                <Text style={styles.dateText}>{adults}</Text>
+              </View>
+              {/* O Picker original pode ser adaptado aqui para mudar o estado `adults` */}
+            </View>
+
+            {/* Crianças */}
+            <View style={styles.peopleInput}>
+              <View style={styles.inputField}>
+                <Text style={styles.dateLabel}>Crianças</Text>
+                <Text style={styles.dateText}>{children}</Text>
+              </View>
+            </View>
+          </View>
+
+          {/* Orçamento (Budget) */}
+          <View style={styles.budgetSection}>
+            <View style={styles.budgetHeader}>
+              <Text style={styles.quantoGastarText}>Quanto deseja gastar</Text>
+            </View>
+            
+            {/* Slider de Orçamento */}
+            <View style={styles.sliderWrapper}>
+                <Text style={styles.budgetValueText}>R$ {budget}</Text>
+                <BudgetSlider
+                    budget={budget}
+                    setBudget={setBudget}
+                    minimumValue={minBudgetSlider}
+                    maximumValue={maxBudgetSlider}
+                />
+            </View>
+            
+            {/* Inputs de Valor Mínimo e Máximo */}
+            <View style={styles.minMaxInputRow}>
+                <TextInput style={styles.minMaxInput} value={`$${minBudgetSlider}`} editable={false} />
+                <Text style={styles.minMaxSeparator}>-</Text>
+                <TextInput style={styles.minMaxInput} value={`$${maxBudgetSlider}`} editable={false} />
+            </View>
+          </View>
+
+          {/* Espaçamento final antes da área azul */}
+          <View style={styles.spacer} />
         </View>
+      </ScrollView>
 
-        <View style={styles.dateInputWrapper}>
-          <Text style={styles.label}>Data de Volta:</Text>
-          <TouchableOpacity onPress={() => setShowDateOutPicker(true)} style={styles.dateInput}>
-            <Text style={styles.dateInputText}>{dateOut || 'Selecionar Data'}</Text>
+      {/* --- ÁREA AZUL FIXA (RODAPÉ/IMAGEM) --- */}
+      {/* Esta View usa zIndex e position: 'absolute' para criar o efeito de onda */}
+      <View style={styles.blueArea}>
+        <Image 
+          source={require('../assets/images/component/rio.png')} // Altere para o caminho da sua imagem
+          style={styles.bottomImage} 
+        />
+        
+        {/* Botões - Layout Lado a Lado */}
+        <View style={styles.buttonRow}>
+          <TouchableOpacity style={[styles.actionButton, styles.editButton]}>
+              <Text style={[styles.buttonText, styles.editButtonText]}>Editar</Text>
           </TouchableOpacity>
-          {showDateOutPicker && (
-            <DateTimePicker
-              value={dateOut ? new Date(dateOut.split('/').reverse().join('-')) : new Date()}
-              mode="date"
-              display="default"
-              onChange={handleDateOutChange}
-              minimumDate={dateIn ? new Date(dateIn.split('/').reverse().join('-')) : new Date()}
-            />
-          )}
+          
+          <TouchableOpacity style={[styles.actionButton, styles.concluirButton]} onPress={handleConcluir} disabled={loadingNavigation}>
+              {loadingNavigation ? (
+                  <ActivityIndicator color="#fff" />
+              ) : (
+                  <Text style={styles.buttonText}>Concluir</Text>
+              )}
+          </TouchableOpacity>
         </View>
       </View>
-
-      <View style={styles.pickerContainer}>
-        <View style={styles.pickerWrapper}>
-          <Text style={styles.label}>Adultos:</Text>
-          <Picker
-            selectedValue={adults}
-            style={styles.picker}
-            onValueChange={(itemValue) => setAdults(itemValue)}
-          >
-            {[...Array(10).keys()].map((i) => (
-              <Picker.Item key={i + 1} label={`${i + 1}`} value={i + 1} />
-            ))}
-          </Picker>
-        </View>
-
-        <View style={styles.pickerWrapper}>
-          <Text style={styles.label}>Crianças:</Text>
-          <Picker
-            selectedValue={children}
-            style={styles.picker}
-            onValueChange={(itemValue) => setChildren(itemValue)}
-          >
-            {[...Array(10).keys()].map((i) => (
-              <Picker.Item key={i} label={`${i}`} value={i} />
-            ))}
-          </Picker>
-        </View>
-      </View>
-
-      {/* Não há mais ActivityIndicator aqui, pois foi movido para o componente filho */}
-      <BudgetSlider
-        budget={budget}
-        setBudget={setBudget}
-        minimumValue={minBudgetSlider}
-        maximumValue={maxBudgetSlider}
-      />
-
-      <TouchableOpacity style={styles.button} onPress={handleConcluir} disabled={loadingNavigation}>
-        {loadingNavigation ? (
-          <ActivityIndicator color="#fff" />
-        ) : (
-          <Text style={styles.buttonText}>Concluir</Text>
-        )}
-      </TouchableOpacity>
-    </ScrollView>
+      
+      {/* DatePickers fora do layout principal */}
+      {showDateInPicker && (
+        <DateTimePicker
+          value={dateIn ? new Date(dateIn.split('/').reverse().join('-')) : new Date()}
+          mode="date"
+          display="default"
+          onChange={handleDateInChange}
+        />
+      )}
+      {showDateOutPicker && (
+        <DateTimePicker
+          value={dateOut ? new Date(dateOut.split('/').reverse().join('-')) : new Date()}
+          mode="date"
+          display="default"
+          onChange={handleDateOutChange}
+          minimumDate={dateIn ? new Date(dateIn.split('/').reverse().join('-')) : new Date()}
+        />
+      )}
+    </View>
   );
 }
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8f9fa',
-    padding: 20,
+    backgroundColor: '#fff', 
   },
-  contentContainer: {
-    paddingBottom: 40,
+  scrollContent: {
+    paddingBottom: 250, // Garante espaço para a área azul que fica "por baixo"
   },
-  title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#343a40',
-    marginBottom: 30,
-    textAlign: 'center',
+  // === ÁREA BRANCA (INPUTS) ===
+  whiteArea: {
+    paddingHorizontal: 20,
+    paddingTop: 50, // Espaço no topo
+    backgroundColor: '#fff',
+    zIndex: 2, 
   },
-  label: {
+  destinationContainer: {
+    marginBottom: 20,
+  },
+  indoParaLabel: {
     fontSize: 16,
-    fontWeight: '600',
-    color: '#495057',
-    marginBottom: 8,
-    marginTop: 15,
+    color: '#999',
+    marginBottom: 5,
   },
-  datePickerContainer: {
+  // Linha de 2 Colunas (Datas e Pessoas)
+  inputRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginTop: 15,
+    marginBottom: 15,
   },
-  dateInputWrapper: {
+  datePickerButton: {
     flex: 1,
     marginHorizontal: 5,
   },
-  dateInput: {
+  peopleInput: {
+    flex: 1,
+    marginHorizontal: 5,
+  },
+  // Usado para o rótulo de 'Entrada'/'Adultos'
+  dateLabel: {
+    fontSize: 12,
+    color: '#999',
+    position: 'absolute', 
+    top: 5,
+    left: 10,
+    zIndex: 10,
+  },
+  // Usado para o valor da data/pessoa
+  dateText: {
+    fontSize: 16,
+    color: '#343a40',
+    marginTop: 8,
+  },
+  inputField: {
     backgroundColor: '#fff',
     borderWidth: 1,
     borderColor: '#ced4da',
@@ -277,42 +338,104 @@ const styles = StyleSheet.create({
     padding: 12,
     alignItems: 'center',
     justifyContent: 'center',
+    height: 50,
   },
-  dateInputText: {
-    fontSize: 16,
-    color: '#343a40',
+  // === SEÇÃO DE ORÇAMENTO ===
+  budgetSection: {
+    marginTop: 20,
+    paddingHorizontal: 5,
   },
-  pickerContainer: {
+  budgetHeader: {
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  quantoGastarText: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#495057',
+  },
+  sliderWrapper: {
+    alignItems: 'center',
+  },
+  budgetValueText: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#3A8FFF',
+    marginBottom: 10,
+  },
+  minMaxInputRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginTop: 15,
+    alignItems: 'center',
+    marginTop: 10,
+    paddingHorizontal: 5,
   },
-  pickerWrapper: {
-    flex: 1,
-    marginHorizontal: 5,
-  },
-  picker: {
-    backgroundColor: '#fff',
+  minMaxInput: {
+    width: '45%',
+    textAlign: 'center',
     borderWidth: 1,
     borderColor: '#ced4da',
     borderRadius: 8,
-    height: 50,
+    padding: 8,
+    backgroundColor: '#fff',
+    color: '#343a40',
   },
-  button: {
-    backgroundColor: '#007bff',
+  minMaxSeparator: {
+    color: '#999',
+    fontSize: 20,
+  },
+  spacer: {
+    height: 30, // Espaço antes do corte da onda
+  },
+  // === ÁREA AZUL (RODAPÉ) ===
+  blueArea: {
+    backgroundColor: '#3A8FFF', // Cor principal do protótipo
+    paddingHorizontal: 20,
+    paddingBottom: 40,
+    paddingTop: 70, // Espaço para a "onda"
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    // Cria a curva da onda que sobe no protótipo
+    borderTopLeftRadius: 50, 
+    borderTopRightRadius: 50,
+    zIndex: 1, 
+  },
+  bottomImage: {
+    width: '100%',
+    height: 200,
+    borderRadius: 15,
+    marginBottom: 25,
+    resizeMode: 'cover',
+  },
+  // Botões de Ação
+  buttonRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  actionButton: {
+    flex: 1,
     paddingVertical: 15,
-    borderRadius: 8,
+    borderRadius: 10,
     alignItems: 'center',
-    marginTop: 30,
-    elevation: 3,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
+    marginHorizontal: 10,
+    elevation: 5,
+  },
+  editButton: {
+    backgroundColor: '#fff',
+    borderWidth: 1,
+    borderColor: '#3A8FFF',
+  },
+  editButtonText: {
+    color: '#3A8FFF',
+  },
+  concluirButton: {
+    backgroundColor: '#1D4780', 
   },
   buttonText: {
-    color: '#fff',
     fontSize: 18,
     fontWeight: 'bold',
+    color: '#fff',
   },
 });

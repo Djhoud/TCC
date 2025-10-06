@@ -24,7 +24,7 @@ interface AuthContextType {
   login: (email: string, senha: string) => Promise<boolean>;
   register: (nome: string, email: string, senha: string) => Promise<boolean>;
   fetchUser: () => Promise<void>;
-  API_BASE_URL: string; // Adicione esta propriedade
+  API_BASE_URL: string;
 }
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -32,21 +32,34 @@ export const AuthContext = createContext<AuthContextType | undefined>(undefined)
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [token, setToken] = useState<string | null>(null);
   const [userId, setUserId] = useState<number | null>(null);
-  const [user, setUser] = useState<User | null>(null); // Novo estado para os dados do usuário
+  const [user, setUser] = useState<User | null>(null);
   const [preferenciasCompletas, setPreferenciasCompletas] = useState<boolean | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
+  // 1. FUNÇÃO fetchUser CORRIGIDA: Usa o token do estado atual e o endpoint correto
   const fetchUser = async (userToken: string) => {
+    // Garante que o token existe antes de fazer a chamada
+    if (!userToken) {
+      console.log('fetchUser: Token ausente, pulando requisição.');
+      return; 
+    }
+    
     try {
-      const response = await fetch(`${API_BASE_URL}/api/users`, {
+      // Endpoint corrigido para /api/users/profile
+      const response = await fetch(`${API_BASE_URL}/api/users/profile`, {
         headers: { Authorization: `Bearer ${userToken}` },
       });
+
       if (response.ok) {
         const userData: User = await response.json();
         setUser(userData);
+      } else if (response.status === 401) {
+        // Se o token estiver expirado/inválido, força o logout para recadastrar
+        console.error('Token expirado ou inválido (401). Forçando signOut.');
+        await signOut();
       } else {
-        console.error('Erro ao buscar perfil do usuário:', response.status);
+        console.error(`Erro ao buscar perfil do usuário: ${response.status}`, await response.text());
       }
     } catch (apiError) {
       console.error('Erro de rede ao buscar perfil:', apiError);
@@ -60,12 +73,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         const storedToken = await AsyncStorage.getItem("userToken");
         const storedUserId = await AsyncStorage.getItem("userId");
         const storedPrefsCompleted = await AsyncStorage.getItem("preferenciasCompletas");
-
+        
+        // Log para diagnóstico (pode remover depois)
+        console.log('Stored Token:', storedToken ? 'PRESENTE' : 'AUSENTE');
+        
         if (storedToken && storedUserId) {
           setToken(storedToken);
           setUserId(parseInt(storedUserId, 10));
           setPreferenciasCompletas(storedPrefsCompleted === 'true');
-          await fetchUser(storedToken); // Chama para buscar o perfil ao carregar
+          
+          // 2. CHAMADA CORRIGIDA: Usa o token recuperado do AsyncStorage
+          await fetchUser(storedToken); 
         }
       } catch (e: any) {
         setError("Erro ao carregar sessão anterior: " + e.message);
@@ -79,6 +97,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const signIn = async (userToken: string, id: number, prefsCompleted: boolean, userProfile: User) => {
     try {
+      // Log para verificar se o token é válido no momento do login
+      console.log('Token recebido e prestes a ser salvo:', userToken); 
+      
       await AsyncStorage.setItem('userToken', userToken);
       await AsyncStorage.setItem('userId', id.toString());
       await AsyncStorage.setItem('preferenciasCompletas', prefsCompleted.toString());
@@ -149,6 +170,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         photo: responseData.photo,
       };
 
+      // Chama signIn para salvar o token e atualizar o estado
       await signIn(responseData.token, responseData.userId || responseData.id, responseData.preferenciasCompletas, userProfile);
       return true;
     } catch (err: any) {
@@ -206,7 +228,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     <AuthContext.Provider value={{
       token,
       userId,
-      user, // Adicione o novo estado do usuário
+      user,
       preferenciasCompletas,
       signIn,
       signOut,
@@ -215,8 +237,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       error,
       login,
       register,
-      fetchUser: () => fetchUser(token || ''), // Garante que a função é tipada
-      API_BASE_URL: API_BASE_URL || '' // Passa a URL para o contexto
+      // Passa a função fetchUser para ser usada em outras telas, usando o token do estado
+      fetchUser: () => fetchUser(token || ''), 
+      API_BASE_URL: API_BASE_URL || ''
     }}>
       {children}
     </AuthContext.Provider>
