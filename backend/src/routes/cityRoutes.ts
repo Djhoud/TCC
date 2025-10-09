@@ -1,11 +1,15 @@
-// backend/src/routes/cityRoutes.ts
 import express from 'express';
-import { getCities } from '../controllers/cityController'; // Você precisará criar este controller
+import {
+    getCitiesController,
+    getCityDetailsController
+} from '../controllers/cityController';
 
 const router = express.Router();
 
-router.get('/cities', getCities); // Endpoint para buscar todas as cidades ou cidades filtradas
-// Se quiser um endpoint para buscar sugestões por texto (autocompletar)
-router.get('/cities/suggestions', getCities); // Pode usar o mesmo controller ou um específico
+// 1. Rota para buscar sugestões de cidades (Autocompletar)
+router.get('/cities/suggestions', getCitiesController);
+
+// 2. NOVA ROTA: Rota para buscar detalhes de uma cidade específica (incluindo orçamento)
+router.get('/cities/details', getCityDetailsController);
 
 export default router;
