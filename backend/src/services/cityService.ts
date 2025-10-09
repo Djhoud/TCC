@@ -39,7 +39,7 @@ export const getCitySuggestions = async (searchText?: string) => {
 /**
  * Busca detalhes da cidade com o orçamento calculado dinamicamente
  */
-export const getCityDetails = async (cityName: string): Promise<CityDetails | null> => {
+export const getCityDetails = async (cityName: string, dias: number): Promise<CityDetails | null> => {
     if (!cityName) {
         return null;
     }
