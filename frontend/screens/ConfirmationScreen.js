@@ -1,286 +1,283 @@
-import React, { useEffect, useState } from "react";
-import {
-  ActivityIndicator,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from "react-native";
-import CloudBackReverseUp from "../components/CloudBackReverseUp";
-import Navbar from "../components/Navbar";
+import { FontAwesome5 } from '@expo/vector-icons';
+import { useNavigation, useRoute } from '@react-navigation/native';
+import React from 'react';
+import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import Navbar from '../components/Navbar';
 
-export default function ConfirmationScreen({ route, navigation }) {
-  const [packageData, setPackageData] = useState(null);
-  const [loading, setLoading] = useState(true);
+// Componente auxiliar para formatar valores monetários
+const formatCurrency = (amount) => {
+    return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(amount);
+};
 
-  useEffect(() => {
-    console.log("--- DEBUG ConfirmationScreen useEffect ---");
-    console.log("route.params:", route.params);
-
-    if (route?.params?.packageData) {
-      setPackageData(route.params.packageData);
-      setLoading(false);
-    } else {
-      const fakeData = {
-        destination: "Gramado, RS",
-        dateIn: "20/06/2025", // Ajustado para 'dateIn'
-        dateOut: "27/06/2025", // Ajustado para 'dateOut'
-        items: {
-          destinationTransport: { tipo: "Ônibus executivo", preco_total: "300.00" },
-          accommodation: { nome: "Hotel dos Sonhos - 4 estrelas", preco: "1200.00" },
-          food: [{ descricao: "Café da manhã incluso", preco: "0.00" }, { descricao: "Jantar incluso", preco: "0.00" }],
-          activities: [
-            { nome: "Tour de Chocolate", preco: "150.00" },
-            { nome: "Passeio de Maria-Fumaça", preco: "200.00" },
-            { nome: "Jantar Temático", preco: "100.00" },
-          ],
-          localTransport: { tipo: "Uber", preco: "50.00" },
-          interests: [],
-          events: [],
-        },
-        totalCost: "1799.00",
-      };
-
-      setTimeout(() => {
-        setPackageData(fakeData);
-        setLoading(false);
-      }, 1000);
-    }
-  }, [route.params]);
-
-  const goHome = () => {
-    navigation.navigate("Main");
-  };
-
-  const goToEdit = () => {
-    if (packageData) {
-      navigation.navigate("EditPackage", { packageData });
-    } else {
-      console.warn("packageData é nulo, não é possível navegar para EditPackage.");
-    }
-  };
-
-  if (loading || !packageData) {
-    return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#3A8FFF" />
-        <Text>Carregando pacote...</Text>
-      </View>
-    );
-  }
-
-  const { destination, items, totalCost } = packageData; // Não desestruture dateIn/dateOut daqui se não vêm diretamente no topo do objeto packageData
-  const { accommodation, food, localTransport, destinationTransport, activities, interests, events } = items;
-
-  // Use as datas diretamente de packageData, se o backend as enviar, ou ajuste para onde elas estão
-  const departureDate = packageData.dateIn || "Não Informado";
-  const returnDate = packageData.dateOut || "Não Informado";
-
-  return (
-    <View style={styles.container}>
-      <CloudBackReverseUp />
-      <View style={styles.topArea}>
-        <Text style={styles.title}>Pacote Confirmado!</Text>
-      </View>
-
-      {/* AQUI ESTÁ A MUDANÇA: use contentContainerStyle */}
-      <ScrollView
-        style={styles.bottomAreaScrollView} // Este estilo define o container da rolagem (altura, cor de fundo)
-        contentContainerStyle={styles.bottomAreaContentContainer} // Este estilo define o layout dos filhos
-      >
-        <View style={styles.card}>
-          <Text style={styles.label}>Destino:</Text>
-          <Text style={styles.value}>{destination}</Text>
-
-          <Text style={styles.label}>Data de Ida:</Text>
-          <Text style={styles.value}>{departureDate}</Text>
-
-          <Text style={styles.label}>Data de Volta:</Text>
-          <Text style={styles.value}>{returnDate}</Text>
-
-          {destinationTransport && (
-            <>
-              <Text style={styles.label}>Transporte para Destino:</Text>
-              <Text style={styles.value}>
-                {destinationTransport.tipo || "Não informado"} - R$ {parseFloat(destinationTransport.preco_total || '0').toFixed(2)}
-              </Text>
-            </>
-          )}
-
-          {accommodation && (
-            <>
-              <Text style={styles.label}>Hospedagem:</Text>
-              <Text style={styles.value}>
-                {accommodation.nome || "Não informado"} - R$ {parseFloat(accommodation.preco || '0').toFixed(2)}
-              </Text>
-              <Text style={styles.value}>
-                {accommodation.categoria || "Não informado"} em {accommodation.cidade}
-              </Text>
-            </>
-          )}
-
-          {food && food.length > 0 && (
-            <>
-              <Text style={styles.label}>Opções de Alimentação:</Text>
-              {food.map((f, i) => (
-                <Text key={`food-${i}`} style={styles.value}>
-                  • {f.descricao || f.tipo || "Item de alimentação"} - R$ {parseFloat(f.preco || '0').toFixed(2)}
-                </Text>
-              ))}
-            </>
-          )}
-
-          {localTransport && (
-            <>
-              <Text style={styles.label}>Transporte Local:</Text>
-              <Text style={styles.value}>
-                {localTransport.tipo || "Não informado"} - R$ {parseFloat(localTransport.preco || '0').toFixed(2)}
-              </Text>
-            </>
-          )}
-
-          {activities && activities.length > 0 && (
-            <>
-              <Text style={styles.label}>Atividades Incluídas:</Text>
-              {activities.map((item, i) => (
-                <Text key={`activity-${i}`} style={styles.value}>
-                  • {item.nome || item.descricao || "Atividade"} - R$ {parseFloat(item.preco || '0').toFixed(2)}
-                </Text>
-              ))}
-            </>
-          )}
-
-          {interests && interests.length > 0 && (
-            <>
-              <Text style={styles.label}>Interesses Sugeridos:</Text>
-              {interests.map((item, i) => (
-                <Text key={`interest-${i}`} style={styles.value}>
-                  • {item.nome || item.descricao || "Interesse"} - R$ {parseFloat(item.preco || '0').toFixed(2)}
-                </Text>
-              ))}
-            </>
-          )}
-
-          {events && events.length > 0 && (
-            <>
-              <Text style={styles.label}>Eventos Sugeridos:</Text>
-              {events.map((item, i) => (
-                <Text key={`event-${i}`} style={styles.value}>
-                  • {item.nome || item.descricao || "Evento"} - R$ {parseFloat(item.preco || '0').toFixed(2)}
-                </Text>
-              ))}
-            </>
-          )}
-
-          <Text style={styles.label}>Valor Total:</Text>
-          <Text style={styles.total}>R$ {parseFloat(totalCost || '0').toFixed(2)}</Text>
+// Componente auxiliar para renderizar blocos de detalhes
+const DetailCard = ({ title, children }) => (
+    <View style={styles.card}>
+        <Text style={styles.cardTitle}>{title}</Text>
+        <View style={styles.cardContent}>
+            {children}
         </View>
-
-        <View style={styles.buttonContainer}>
-          <TouchableOpacity style={styles.button} onPress={goHome}>
-            <Text style={styles.buttonText}>Voltar para início</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.editButton} onPress={goToEdit}>
-            <Text style={styles.buttonText}>Editar pacote</Text>
-          </TouchableOpacity>
-        </View>
-      </ScrollView>
-      <Navbar />
     </View>
-  );
+);
+
+export default function ConfirmationScreen() {
+    const route = useRoute();
+    const navigation = useNavigation();
+    
+    // Obtém os dados do pacote passados do TravelBudgetScreen
+    const { packageData } = route.params || {};
+
+    if (!packageData) {
+        return (
+            <View style={[styles.container, styles.centerContent]}>
+                <Text style={styles.errorText}>Erro: Dados do pacote não encontrados.</Text>
+                <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+                    <Text style={styles.backButtonText}>Voltar</Text>
+                </TouchableOpacity>
+            </View>
+        );
+    }
+
+    // --- Funções Auxiliares de Renderização de Conteúdo ---
+
+    const renderFlight = (flight) => (
+        <View key={flight.id} style={styles.itemContainer}>
+            <View style={styles.itemHeader}>
+                <FontAwesome5 name="plane" size={16} color="#1D4780" />
+                <Text style={styles.itemTitle}> Voo: {flight.company}</Text>
+            </View>
+            <Text style={styles.itemDetail}>Rota: {flight.route}</Text>
+            <Text style={styles.itemDetail}>Horário: {flight.time}</Text>
+            <Text style={styles.itemDetail}>Custo: {formatCurrency(flight.cost)}</Text>
+        </View>
+    );
+
+    const renderHotel = (hotel) => (
+        <View key={hotel.id} style={styles.itemContainer}>
+            <View style={styles.itemHeader}>
+                <FontAwesome5 name="hotel" size={16} color="#1D4780" />
+                <Text style={styles.itemTitle}> Hospedagem: {hotel.name}</Text>
+            </View>
+            <Text style={styles.itemDetail}>Estrelas: {hotel.stars} ★</Text>
+            <Text style={styles.itemDetail}>Período: {hotel.period}</Text>
+            <Text style={styles.itemDetail}>Custo Total: {formatCurrency(hotel.cost)}</Text>
+        </View>
+    );
+
+    const renderActivity = (activity) => (
+        <View key={activity.id} style={styles.itemContainer}>
+            <View style={styles.itemHeader}>
+                <FontAwesome5 name="map-marker-alt" size={16} color="#1D4780" />
+                <Text style={styles.itemTitle}> Atividade: {activity.name}</Text>
+            </View>
+            <Text style={styles.itemDetail}>Dia: {activity.day}</Text>
+            <Text style={styles.itemDetail}>Custo (por pessoa): {activity.cost > 0 ? formatCurrency(activity.cost) : 'Grátis'}</Text>
+        </View>
+    );
+
+    // Formatação de Datas
+    const formatDate = (dateISO) => {
+        const date = new Date(dateISO);
+        return date.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' });
+    };
+
+
+    return (
+        <View style={styles.container}>
+            <ScrollView contentContainerStyle={styles.scrollContent}>
+                <View style={styles.header}>
+                    <Text style={styles.title}>Pacote Gerado com Sucesso!</Text>
+                    <Text style={styles.subtitle}>Sua viagem para {packageData.destino} está pronta.</Text>
+                </View>
+
+                {/* --- RESUMO GERAL --- */}
+                <DetailCard title="Resumo da Viagem">
+                    <Text style={styles.summaryText}>
+                        <Text style={{ fontWeight: 'bold' }}>Destino:</Text> {packageData.destino}
+                    </Text>
+                    <Text style={styles.summaryText}>
+                        <Text style={{ fontWeight: 'bold' }}>Período:</Text> {formatDate(packageData.dateIn)} a {formatDate(packageData.dateOut)} ({packageData.numDays} dias)
+                    </Text>
+                    <Text style={styles.summaryText}>
+                        <Text style={{ fontWeight: 'bold' }}>Pessoas:</Text> {packageData.adults} Adultos e {packageData.children} Crianças
+                    </Text>
+                    <Text style={[styles.summaryText, styles.totalBudget]}>
+                        <Text style={{ fontWeight: 'bold' }}>Orçamento Definido:</Text> {formatCurrency(packageData.orcamento)}
+                    </Text>
+                    <Text style={[styles.summaryText, styles.totalCost]}>
+                        <Text style={{ fontWeight: 'bold' }}>Custo Total Estimado:</Text> {formatCurrency(packageData.totalCost)}
+                    </Text>
+                </DetailCard>
+
+                {/* --- VOOS --- */}
+                <DetailCard title="Voos Selecionados">
+                    {packageData.flights && packageData.flights.length > 0 ? (
+                        packageData.flights.map(renderFlight)
+                    ) : (
+                        <Text style={styles.noDataText}>Voos não incluídos no pacote.</Text>
+                    )}
+                </DetailCard>
+
+                {/* --- HOSPEDAGEM --- */}
+                <DetailCard title="Opção de Hospedagem">
+                    {packageData.hotel ? (
+                        renderHotel(packageData.hotel)
+                    ) : (
+                        <Text style={styles.noDataText}>Hospedagem não incluída ou indefinida.</Text>
+                    )}
+                </DetailCard>
+                
+                {/* --- ATIVIDADES (ROTEIRO) --- */}
+                <DetailCard title="Roteiro de Atividades">
+                    {packageData.activities && packageData.activities.length > 0 ? (
+                        packageData.activities.map(renderActivity)
+                    ) : (
+                        <Text style={styles.noDataText}>Nenhuma atividade sugerida.</Text>
+                    )}
+                </DetailCard>
+
+
+                <View style={styles.actionArea}>
+                    <TouchableOpacity 
+                        style={[styles.actionButton, styles.saveButton]}
+                        onPress={() => Alert.alert("Salvar", "Funcionalidade de salvar pacote em desenvolvimento.")}
+                    >
+                        <Text style={styles.buttonText}>Salvar Pacote</Text>
+                    </TouchableOpacity>
+                    
+                    <TouchableOpacity 
+                        style={[styles.actionButton, styles.newTripButton]}
+                        onPress={() => navigation.navigate('TravelBudget')}
+                    >
+                        <Text style={[styles.buttonText, styles.newTripButtonText]}>Nova Viagem</Text>
+                    </TouchableOpacity>
+                </View>
+
+            </ScrollView>
+            <Navbar />
+        </View>
+    );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#fff" },
-  title: {
-    fontSize: 38,
-    fontWeight: "bold",
-    color: "#3A8FFF",
-    marginBottom: 20,
-    textAlign: "center",
-  },
-  topArea: {
-    paddingTop: 60,
-    paddingBottom: 20,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "#fff",
-    zIndex: 1,
-    height: "25%",
-  },
-  // NOVO ESTILO PARA O ScrollView
-  bottomAreaScrollView: {
-    height: "70%", // Ou flex: 1, dependendo do layout desejado
-    backgroundColor: "#3A8FFF",
-  },
-  // ESTILO PARA O CONTEÚDO DO ScrollView
-  bottomAreaContentContainer: {
-    paddingHorizontal: 20,
-    paddingVertical: 30,
-    alignItems: "center", // <<-- ESTE FOI MOVIDO PARA CÁ
-    // justifyContent: "space-between", // Remova se não precisar disto para os filhos, pois o ScrollView lida com a rolagem
-  },
-  card: {
-    backgroundColor: "#f1f1f1",
-    borderRadius: 16,
-    padding: 20,
-    width: "100%",
-    maxWidth: 360,
-    alignSelf: "center", // `alignSelf` funciona em filhos de `contentContainerStyle`
-    marginBottom: 20,
-  },
-  label: {
-    fontWeight: "bold",
-    fontSize: 16,
-    marginTop: 10,
-    color: "#444",
-  },
-  value: {
-    fontSize: 16,
-    color: "#555",
-  },
-  total: {
-    fontSize: 20,
-    fontWeight: "bold",
-    color: "#1a1a1a",
-    marginTop: 10,
-  },
-  buttonContainer: {
-    flexDirection: "row",
-    width: "100%",
-    justifyContent: "space-between",
-    maxWidth: 600,
-    marginTop: 20,
-    marginBottom: 20,
-  },
-  button: {
-    backgroundColor: "#1D4780",
-    paddingVertical: 14,
-    paddingHorizontal: 24,
-    borderRadius: 12,
-    alignItems: "center",
-    flex: 1,
-    marginRight: 10,
-  },
-  editButton: {
-    backgroundColor: "#2465B0",
-    paddingVertical: 14,
-    paddingHorizontal: 24,
-    borderRadius: 12,
-    alignItems: "center",
-    flex: 1,
-    marginLeft: 10,
-  },
-  buttonText: {
-    color: "#fff",
-    fontSize: 16,
-    fontWeight: "bold",
-    textAlign: "center",
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-  },
+    container: { flex: 1, backgroundColor: '#f4f7f9' },
+    scrollContent: { paddingHorizontal: 20, paddingTop: 30, paddingBottom: 100 },
+    centerContent: { justifyContent: 'center', alignItems: 'center' },
+    
+    header: { marginBottom: 30, alignItems: 'center' },
+    title: { fontSize: 24, fontWeight: 'bold', color: '#1D4780', textAlign: 'center' },
+    subtitle: { fontSize: 16, color: '#6c757d', marginTop: 5, textAlign: 'center' },
+    errorText: { fontSize: 18, color: 'red', textAlign: 'center' },
+    
+    // Cards de Detalhes
+    card: {
+        backgroundColor: '#fff',
+        borderRadius: 15,
+        padding: 20,
+        marginBottom: 20,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+        elevation: 3,
+    },
+    cardTitle: {
+        fontSize: 18,
+        fontWeight: 'bold',
+        color: '#343a40',
+        marginBottom: 15,
+        borderBottomWidth: 1,
+        borderBottomColor: '#f8f9fa',
+        paddingBottom: 5,
+    },
+    cardContent: {
+        paddingHorizontal: 5,
+    },
+
+    // Itens e Detalhes
+    itemContainer: {
+        marginBottom: 15,
+        paddingLeft: 10,
+        borderLeftWidth: 3,
+        borderLeftColor: '#3A8FFF',
+    },
+    itemHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: 5,
+    },
+    itemTitle: {
+        fontSize: 16,
+        fontWeight: '600',
+        color: '#1D4780',
+        marginLeft: 5,
+    },
+    itemDetail: {
+        fontSize: 14,
+        color: '#495057',
+        marginLeft: 25,
+    },
+    noDataText: {
+        fontSize: 14,
+        color: '#999',
+        fontStyle: 'italic',
+    },
+
+    // Resumo Geral
+    summaryText: {
+        fontSize: 15,
+        color: '#495057',
+        marginBottom: 5,
+    },
+    totalBudget: {
+        marginTop: 10,
+        color: '#007bff',
+        fontWeight: 'bold',
+    },
+    totalCost: {
+        color: '#28a745',
+        fontWeight: 'bold',
+        fontSize: 16,
+    },
+
+    // Botões
+    actionArea: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        marginTop: 30,
+        marginBottom: 20,
+    },
+    actionButton: {
+        flex: 1,
+        paddingVertical: 15,
+        borderRadius: 10,
+        alignItems: 'center',
+        marginHorizontal: 5,
+        elevation: 5,
+    },
+    saveButton: { 
+        backgroundColor: '#3A8FFF',
+    },
+    newTripButton: { 
+        backgroundColor: '#fff', 
+        borderWidth: 1, 
+        borderColor: '#3A8FFF',
+    },
+    newTripButtonText: { 
+        color: '#3A8FFF',
+    },
+    buttonText: { 
+        fontSize: 16, 
+        fontWeight: 'bold', 
+        color: '#fff',
+    },
+    backButton: {
+        marginTop: 20,
+        padding: 10,
+        backgroundColor: '#3A8FFF',
+        borderRadius: 8,
+    },
+    backButtonText: {
+        color: '#fff',
+        fontSize: 16,
+    }
 });

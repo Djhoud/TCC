@@ -28,7 +28,7 @@ app.use('/auth', authRoutes);
 app.use('/api/users', profileRoutes);
 app.use('/api/preferences', verifyToken, preferenceRoutes);
 app.use('/api/packages', verifyToken, packageRoutes);
-app.use('/api', cityRoutes);
+app.use('/api/cities', cityRoutes);
 
 app.get('/', (req, res) => {
   res.send('Servidor rodando com sucesso! 🚀');

@@ -1,51 +1,108 @@
-import { Request, RequestHandler, Response } from 'express';
-import * as cityService from '../services/cityService';
+import { Request, Response } from "express";
+import * as cityService from "../services/cityService";
 
-// Controller para buscar sugestões de cidades (Autocomplete)
-export const getCitiesController = async (req: Request, res: Response) => {
-    try {
-        const searchText = req.query.search as string | undefined;
-        const cities = await cityService.getCitySuggestions(searchText);
-        res.json(cities);
-    } catch (error) {
-        console.error('Erro no controller de sugestões de cidades:', error);
-        res.status(500).json({ message: 'Erro interno ao buscar sugestões.' });
-    }
+/**
+ * Endpoint para obter sugestões de nomes de cidades.
+ * Rota: /api/cities/suggestions?search=...
+ */
+export const getCitiesController = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const searchText = req.query.search as string | undefined;
+    const cities = await cityService.getCitySuggestions(searchText);
+    res.json(cities);
+  } catch (error) {
+    console.error('Erro no controller de sugestões de cidades:', error);
+    res.status(500).json({ message: 'Erro interno ao buscar sugestões.' });
+  }
 };
 
-// NOVO CONTROLLER: Busca os detalhes da cidade, incluindo orçamento
-export const getCityDetailsController: RequestHandler = async (req: Request, res: Response) => {
-    // Parâmetros de Query String
-    const cityName = req.query.cityName as string;
+/**
+ * Endpoint para obter detalhes de orçamento DIÁRIO da cidade (Custo base por dia).
+ * Rota: /api/cities/details?cityName=...
+ */
+export const getCityDailyDetailsController = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const cityName = req.query.cityName as string;
+    const userId = (req as any).userId; 
+
+    if (!cityName) {
+      res.status(400).json({ message: 'O nome da cidade é obrigatório.' });
+      return;
+    }
+
+    if (!userId) {
+      res.status(401).json({ message: 'Usuário não autenticado.' });
+      return;
+    }
+
+    const details = await cityService.getCityDetails(cityName, userId); 
+    
+    if (!details) {
+        res.status(404).json({ message: 'Detalhes da cidade não encontrados no banco de dados.' });
+        return;
+    }
+    
+    res.json(details);
+  } catch (error) {
+    console.error('Erro no controller de detalhes diários da cidade:', error);
+    res.status(500).json({ message: 'Erro interno ao buscar detalhes da cidade.' });
+  }
+};
+
+/**
+ * Endpoint para calcular o Orçamento TOTAL do Pacote (Multiplicando por Dias e Pessoas).
+ * Rota: /api/cities/package?cityName=...&numPeople=...&numDays=...
+ */
+export const calculatePackageBudgetController = async (req: Request, res: Response): Promise<void> => {
+  try {
+    // Recebimento e parse dos parâmetros
+    const cityName = req.query.cityName as string;
+    const numPeople = parseInt(req.query.numPeople as string, 10);
+    const numDays = parseInt(req.query.numDays as string, 10);
+
+    // >>> DEBUG LOG 1: VERIFICANDO OS INPUTS
+    console.log("Recebido (Package Inputs):", { cityName, numPeople, numDays });
+
+    if (!cityName || typeof cityName !== "string") {
+      res.status(400).json({ error: "Nome da cidade inválido." });
+      return;
+    }
+
+    if (isNaN(numPeople) || numPeople < 1) {
+      res.status(400).json({ error: "Número de pessoas inválido." });
+      return;
+    }
+
+    if (isNaN(numDays) || numDays < 1) {
+      res.status(400).json({ error: "Número de dias inválido." });
+      return;
+    }
+
+    const userId = (req as any).userId;
+    if (!userId) {
+      res.status(401).json({ error: "Token inválido ou ausente." });
+      return;
+    }
+
+    // Chamada à função de cálculo total
+    const cityDetails = await cityService.calculateTotalBudget(
+      cityName,
+      userId,
+      numPeople,
+      numDays
+    );
+
+    if (!cityDetails) {
+        res.status(404).json({ error: "Pacote ou detalhes da cidade não encontrados." });
+        return;
+    }
     
-    // Torna 'dias' opcional para a primeira busca. 
-    // Usamos 1 se não for enviado ou for inválido.
-    let dias = parseInt(req.query.dias as string, 10); 
-    if (isNaN(dias) || dias <= 0) {
-        dias = 1; // Padrão: 1 dia (para retornar o custo diário estimado)
-    }
+    // >>> DEBUG LOG 2: VERIFICANDO O OUTPUT FINAL
+    console.log("Resultado FINAL (Budget Total):", cityDetails);
 
-    // Apenas o nome da cidade é obrigatório para a primeira busca de orçamento
-    if (!cityName) {
-        res.status(400).json({ message: 'O nome da cidade é obrigatório.' });
-        return;
-    }
-
-    try {
-        // Passa o nome da cidade E o número de dias (1 ou o valor real)
-        const details = await cityService.getCityDetails(cityName, dias);
-
-        if (!details) {
-            res.status(404).json({ message: 'Detalhes da cidade não encontrados.' });
-            return;
-        }
-    
-        res.json(details);
-        
-    } catch (error) {
-        console.error('Erro no controller de detalhes da cidade:', error);
-        
-        res.status(500).json({ message: 'Erro interno ao buscar detalhes da cidade.' });
-        return;
-    }
+    res.json(cityDetails);
+  } catch (error) {
+    console.error("Erro em calculatePackageBudgetController:", error);
+    res.status(500).json({ error: "Erro ao calcular o pacote de viagem." });
+  }
 };

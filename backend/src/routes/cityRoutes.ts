@@ -1,15 +1,16 @@
-import express from 'express';
-import {
-    getCitiesController,
-    getCityDetailsController
-} from '../controllers/cityController';
+import { Router } from 'express';
+import * as cityController from '../controllers/cityController';
+import authenticateToken from '../middleware/authMiddleware';
 
-const router = express.Router();
+const router = Router();
 
-// 1. Rota para buscar sugestões de cidades (Autocompletar)
-router.get('/cities/suggestions', getCitiesController);
+// Rota para sugestões de cidades (usada no campo de busca)
+router.get('/suggestions', authenticateToken, cityController.getCitiesController);
 
-// 2. NOVA ROTA: Rota para buscar detalhes de uma cidade específica (incluindo orçamento)
-router.get('/cities/details', getCityDetailsController);
+// Rota para obter detalhes DIÁRIOS da cidade (custo base por dia)
+router.get('/details', authenticateToken, cityController.getCityDailyDetailsController);
+
+// Rota para calcular o ORÇAMENTO TOTAL do pacote (usa numPeople e numDays)
+router.get('/package', authenticateToken, cityController.calculatePackageBudgetController);
 
 export default router;

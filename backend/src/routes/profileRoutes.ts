@@ -10,7 +10,7 @@ interface AuthRequest extends Request {
   userId?: number;
 }
 
-// 🔹 Rota: Perfil do usuário logado
+
 router.get('/profile', verifyToken, asyncHandler(async (req: AuthRequest, res: Response) => {
   const userId = req.userId;
 
