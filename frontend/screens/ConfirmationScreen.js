@@ -6,6 +6,7 @@ import Navbar from '../components/Navbar';
 
 // Componente auxiliar para formatar valores monetários
 const formatCurrency = (amount) => {
+    if (!amount || isNaN(amount)) return 'R$ 0,00';
     return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(amount);
 };
 
@@ -37,104 +38,201 @@ export default function ConfirmationScreen() {
         );
     }
 
-    // --- Funções Auxiliares de Renderização de Conteúdo ---
+    // Formatação de Datas - CORRIGIDA
+    const formatDate = (dateString) => {
+        if (!dateString) return 'Data não definida';
+        try {
+            const date = new Date(dateString);
+            if (isNaN(date.getTime())) return 'Data inválida';
+            return date.toLocaleDateString('pt-BR', { 
+                day: '2-digit', 
+                month: 'short', 
+                year: 'numeric' 
+            });
+        } catch (error) {
+            return 'Data inválida';
+        }
+    };
 
-    const renderFlight = (flight) => (
-        <View key={flight.id} style={styles.itemContainer}>
+    // --- Funções Auxiliares de Renderização CORRIGIDAS ---
+
+    const renderTransport = (transport, type) => (
+        <View key={transport?.id || Math.random()} style={styles.itemContainer}>
             <View style={styles.itemHeader}>
-                <FontAwesome5 name="plane" size={16} color="#1D4780" />
-                <Text style={styles.itemTitle}> Voo: {flight.company}</Text>
+                <FontAwesome5 
+                    name={type === 'flight' ? "plane" : "bus"} 
+                    size={16} 
+                    color="#1D4780" 
+                />
+                <Text style={styles.itemTitle}>
+                    {type === 'flight' ? 'Transporte: ' : 'Transporte Local: '} 
+                    {transport?.tipo || 'Não especificado'}
+                </Text>
             </View>
-            <Text style={styles.itemDetail}>Rota: {flight.route}</Text>
-            <Text style={styles.itemDetail}>Horário: {flight.time}</Text>
-            <Text style={styles.itemDetail}>Custo: {formatCurrency(flight.cost)}</Text>
+            <Text style={styles.itemDetail}>Descrição: {transport?.descricao || 'N/A'}</Text>
+            <Text style={styles.itemDetail}>
+                Custo: {formatCurrency(transport?.preco_estimado || transport?.preco)}
+            </Text>
         </View>
     );
 
-    const renderHotel = (hotel) => (
-        <View key={hotel.id} style={styles.itemContainer}>
+    const renderAccommodation = (accommodation) => (
+        <View key={accommodation?.id} style={styles.itemContainer}>
             <View style={styles.itemHeader}>
                 <FontAwesome5 name="hotel" size={16} color="#1D4780" />
-                <Text style={styles.itemTitle}> Hospedagem: {hotel.name}</Text>
+                <Text style={styles.itemTitle}> Hospedagem: {accommodation?.nome || 'Não especificada'}</Text>
             </View>
-            <Text style={styles.itemDetail}>Estrelas: {hotel.stars} ★</Text>
-            <Text style={styles.itemDetail}>Período: {hotel.period}</Text>
-            <Text style={styles.itemDetail}>Custo Total: {formatCurrency(hotel.cost)}</Text>
+            <Text style={styles.itemDetail}>Endereço: {accommodation?.endereco || 'N/A'}</Text>
+            <Text style={styles.itemDetail}>Cidade: {accommodation?.cidade || 'N/A'}</Text>
+            <Text style={styles.itemDetail}>Categoria: {accommodation?.categoria || 'N/A'}</Text>
+            <Text style={styles.itemDetail}>Custo: {formatCurrency(accommodation?.preco)}</Text>
+        </View>
+    );
+
+    const renderFood = (food) => (
+        <View key={food?.id} style={styles.itemContainer}>
+            <View style={styles.itemHeader}>
+                <FontAwesome5 name="utensils" size={16} color="#1D4780" />
+                <Text style={styles.itemTitle}> Alimentação: {food?.tipo || 'Não especificada'}</Text>
+            </View>
+            <Text style={styles.itemDetail}>Descrição: {food?.descricao || 'N/A'}</Text>
+            <Text style={styles.itemDetail}>Categoria: {food?.categoria || 'N/A'}</Text>
+            <Text style={styles.itemDetail}>Custo: {formatCurrency(food?.preco)}</Text>
         </View>
     );
 
     const renderActivity = (activity) => (
-        <View key={activity.id} style={styles.itemContainer}>
+        <View key={activity?.id} style={styles.itemContainer}>
             <View style={styles.itemHeader}>
                 <FontAwesome5 name="map-marker-alt" size={16} color="#1D4780" />
-                <Text style={styles.itemTitle}> Atividade: {activity.name}</Text>
+                <Text style={styles.itemTitle}> Atividade: {activity?.nome || 'Não especificada'}</Text>
             </View>
-            <Text style={styles.itemDetail}>Dia: {activity.day}</Text>
-            <Text style={styles.itemDetail}>Custo (por pessoa): {activity.cost > 0 ? formatCurrency(activity.cost) : 'Grátis'}</Text>
+            <Text style={styles.itemDetail}>Descrição: {activity?.descricao || 'N/A'}</Text>
+            <Text style={styles.itemDetail}>Categoria: {activity?.categoria || 'N/A'}</Text>
+            <Text style={styles.itemDetail}>Custo: {formatCurrency(activity?.preco)}</Text>
         </View>
     );
 
-    // Formatação de Datas
-    const formatDate = (dateISO) => {
-        const date = new Date(dateISO);
-        return date.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' });
-    };
+    const renderInterest = (interest) => (
+        <View key={interest?.id} style={styles.itemContainer}>
+            <View style={styles.itemHeader}>
+                <FontAwesome5 name="heart" size={16} color="#1D4780" />
+                <Text style={styles.itemTitle}> Interesse: {interest?.nome || 'Não especificado'}</Text>
+            </View>
+            <Text style={styles.itemDetail}>Descrição: {interest?.descricao || 'N/A'}</Text>
+            <Text style={styles.itemDetail}>Categoria: {interest?.categoria || 'N/A'}</Text>
+            <Text style={styles.itemDetail}>Custo: {formatCurrency(interest?.preco)}</Text>
+        </View>
+    );
 
+    const renderEvent = (event) => (
+        <View key={event?.id} style={styles.itemContainer}>
+            <View style={styles.itemHeader}>
+                <FontAwesome5 name="calendar-alt" size={16} color="#1D4780" />
+                <Text style={styles.itemTitle}> Evento: {event?.nome || 'Não especificado'}</Text>
+            </View>
+            <Text style={styles.itemDetail}>Descrição: {event?.descricao || 'N/A'}</Text>
+            <Text style={styles.itemDetail}>Data: {formatDate(event?.data_hora)}</Text>
+            <Text style={styles.itemDetail}>Categoria: {event?.categoria || 'N/A'}</Text>
+            <Text style={styles.itemDetail}>Custo: {formatCurrency(event?.preco)}</Text>
+        </View>
+    );
+
+    // Extrair dados da estrutura correta do pacote
+    const items = packageData.items || {};
+    const destination = packageData.destination || packageData.destino || 'Destino não especificado';
+    const budget = packageData.budget || packageData.orcamento || 0;
+    const totalCost = packageData.totalCost || 0;
 
     return (
         <View style={styles.container}>
             <ScrollView contentContainerStyle={styles.scrollContent}>
                 <View style={styles.header}>
                     <Text style={styles.title}>Pacote Gerado com Sucesso!</Text>
-                    <Text style={styles.subtitle}>Sua viagem para {packageData.destino} está pronta.</Text>
+                    <Text style={styles.subtitle}>Sua viagem para {destination} está pronta.</Text>
                 </View>
 
                 {/* --- RESUMO GERAL --- */}
                 <DetailCard title="Resumo da Viagem">
                     <Text style={styles.summaryText}>
-                        <Text style={{ fontWeight: 'bold' }}>Destino:</Text> {packageData.destino}
+                        <Text style={{ fontWeight: 'bold' }}>Destino:</Text> {destination}
                     </Text>
                     <Text style={styles.summaryText}>
-                        <Text style={{ fontWeight: 'bold' }}>Período:</Text> {formatDate(packageData.dateIn)} a {formatDate(packageData.dateOut)} ({packageData.numDays} dias)
+                        <Text style={{ fontWeight: 'bold' }}>Período:</Text> {formatDate(packageData.dateIn)} a {formatDate(packageData.dateOut)} ({packageData.numDays || 0} dias)
                     </Text>
                     <Text style={styles.summaryText}>
-                        <Text style={{ fontWeight: 'bold' }}>Pessoas:</Text> {packageData.adults} Adultos e {packageData.children} Crianças
+                        <Text style={{ fontWeight: 'bold' }}>Pessoas:</Text> {packageData.adults || 0} Adultos e {packageData.children || 0} Crianças
                     </Text>
                     <Text style={[styles.summaryText, styles.totalBudget]}>
-                        <Text style={{ fontWeight: 'bold' }}>Orçamento Definido:</Text> {formatCurrency(packageData.orcamento)}
+                        <Text style={{ fontWeight: 'bold' }}>Orçamento Definido:</Text> {formatCurrency(budget)}
                     </Text>
                     <Text style={[styles.summaryText, styles.totalCost]}>
-                        <Text style={{ fontWeight: 'bold' }}>Custo Total Estimado:</Text> {formatCurrency(packageData.totalCost)}
+                        <Text style={{ fontWeight: 'bold' }}>Custo Total Estimado:</Text> {formatCurrency(totalCost)}
                     </Text>
-                </DetailCard>
-
-                {/* --- VOOS --- */}
-                <DetailCard title="Voos Selecionados">
-                    {packageData.flights && packageData.flights.length > 0 ? (
-                        packageData.flights.map(renderFlight)
-                    ) : (
-                        <Text style={styles.noDataText}>Voos não incluídos no pacote.</Text>
-                    )}
                 </DetailCard>
 
                 {/* --- HOSPEDAGEM --- */}
-                <DetailCard title="Opção de Hospedagem">
-                    {packageData.hotel ? (
-                        renderHotel(packageData.hotel)
+                <DetailCard title="Hospedagem">
+                    {items.accommodation ? (
+                        renderAccommodation(items.accommodation)
                     ) : (
-                        <Text style={styles.noDataText}>Hospedagem não incluída ou indefinida.</Text>
-                    )}
-                </DetailCard>
-                
-                {/* --- ATIVIDADES (ROTEIRO) --- */}
-                <DetailCard title="Roteiro de Atividades">
-                    {packageData.activities && packageData.activities.length > 0 ? (
-                        packageData.activities.map(renderActivity)
-                    ) : (
-                        <Text style={styles.noDataText}>Nenhuma atividade sugerida.</Text>
+                        <Text style={styles.noDataText}>Hospedagem não incluída no pacote.</Text>
                     )}
                 </DetailCard>
 
+                {/* --- TRANSPORTE PARA O DESTINO --- */}
+                <DetailCard title="Transporte para o Destino">
+                    {items.destinationTransport ? (
+                        renderTransport(items.destinationTransport, 'flight')
+                    ) : (
+                        <Text style={styles.noDataText}>Transporte para o destino não incluído.</Text>
+                    )}
+                </DetailCard>
+
+                {/* --- TRANSPORTE LOCAL --- */}
+                <DetailCard title="Transporte Local">
+                    {items.localTransport ? (
+                        renderTransport(items.localTransport, 'local')
+                    ) : (
+                        <Text style={styles.noDataText}>Transporte local não incluído.</Text>
+                    )}
+                </DetailCard>
+
+                {/* --- ALIMENTAÇÃO --- */}
+                <DetailCard title="Alimentação">
+                    {items.food && items.food.length > 0 ? (
+                        items.food.map(renderFood)
+                    ) : (
+                        <Text style={styles.noDataText}>Opções de alimentação não incluídas.</Text>
+                    )}
+                </DetailCard>
+
+                {/* --- ATIVIDADES --- */}
+                <DetailCard title="Atividades">
+                    {items.activities && items.activities.length > 0 ? (
+                        items.activities.map(renderActivity)
+                    ) : (
+                        <Text style={styles.noDataText}>Nenhuma atividade incluída.</Text>
+                    )}
+                </DetailCard>
+
+                {/* --- INTERESSES --- */}
+                <DetailCard title="Interesses">
+                    {items.interests && items.interests.length > 0 ? (
+                        items.interests.map(renderInterest)
+                    ) : (
+                        <Text style={styles.noDataText}>Nenhum interesse incluído.</Text>
+                    )}
+                </DetailCard>
+
+                {/* --- EVENTOS --- */}
+                <DetailCard title="Eventos">
+                    {items.events && items.events.length > 0 ? (
+                        items.events.map(renderEvent)
+                    ) : (
+                        <Text style={styles.noDataText}>Nenhum evento incluído.</Text>
+                    )}
+                </DetailCard>
 
                 <View style={styles.actionArea}>
                     <TouchableOpacity 
@@ -146,7 +244,7 @@ export default function ConfirmationScreen() {
                     
                     <TouchableOpacity 
                         style={[styles.actionButton, styles.newTripButton]}
-                        onPress={() => navigation.navigate('TravelBudget')}
+                        onPress={() => navigation.navigate('MainScreen')}
                     >
                         <Text style={[styles.buttonText, styles.newTripButtonText]}>Nova Viagem</Text>
                     </TouchableOpacity>
@@ -215,6 +313,7 @@ const styles = StyleSheet.create({
         fontSize: 14,
         color: '#495057',
         marginLeft: 25,
+        marginBottom: 2,
     },
     noDataText: {
         fontSize: 14,
