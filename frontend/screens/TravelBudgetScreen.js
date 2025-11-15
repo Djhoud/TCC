@@ -19,7 +19,6 @@ import Navbar from '../components/Navbar';
 
 export default function TravelBudgetScreen() {
     const navigation = useNavigation();
-    // Garantindo que a URL da API não tenha o "/" final
     const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL.replace(/\/$/, '');
 
     // --- ESTADOS ---
@@ -27,7 +26,6 @@ export default function TravelBudgetScreen() {
     const [budget, setBudget] = useState(1000);
     const [minBudgetSlider, setMinBudgetSlider] = useState(0);
     const [maxBudgetSlider, setMaxBudgetSlider] = useState(5000);
-
     const [adults, setAdults] = useState(1);
     const [children, setChildren] = useState(0);
     const [dateIn, setDateIn] = useState(null);
@@ -37,25 +35,15 @@ export default function TravelBudgetScreen() {
     const [loadingNavigation, setLoadingNavigation] = useState(false);
 
     // --- FUNÇÕES AUXILIARES ---
-
     const getTravelDays = (dIn, dOut) => {
-        // Se as datas não estiverem definidas, assume 1 dia para o cálculo inicial
-        if (!dIn || !dOut) return 1; 
-
+        if (!dIn || !dOut) return 1;
         const oneDay = 1000 * 60 * 60 * 24;
-        // As datas devem ser normalizadas para o início do dia para evitar problemas de fuso horário
         const date1 = new Date(dIn.getFullYear(), dIn.getMonth(), dIn.getDate());
         const date2 = new Date(dOut.getFullYear(), dOut.getMonth(), dOut.getDate());
-
         const diffTime = date2.getTime() - date1.getTime();
-        
-        // Se a data de volta for antes da ida, retorna 0 dias. O handleConcluir validará.
-        if (diffTime < 0) return 0; 
-        
+        if (diffTime < 0) return 0;
         const diffDays = Math.ceil(diffTime / oneDay);
-
-        // Garante no mínimo 1 dia (para viagens de ida e volta no mesmo dia)
-        return Math.max(1, diffDays); 
+        return Math.max(1, diffDays);
     };
 
     const formatDateDisplay = (date) => {
@@ -71,21 +59,19 @@ export default function TravelBudgetScreen() {
         return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(amount);
     };
 
-    // --- FUNÇÃO DE BUSCA DO ORÇAMENTO (MIN E MAX) ---
+    // --- FUNÇÃO DE BUSCA DO ORÇAMENTO ---
     const fetchCityBudget = async (cityName, numDays, numPeople) => {
-        // Verifica as condições mínimas antes de fazer a chamada
         if (!cityName || numPeople === 0 || numDays === 0) return;
 
         const userToken = await AsyncStorage.getItem('userToken');
         if (!userToken) {
-            console.warn('Token de usuário não encontrado. Orçamento não será atualizado.');
+            console.warn('Token de usuário não encontrado.');
             setMinBudgetSlider(100);
             setMaxBudgetSlider(5000);
             setBudget(1000);
             return;
         }
         
-        // CORREÇÃO CRÍTICA APLICADA: Adicionado o prefixo "/api"
         const url = `${API_BASE_URL}/api/cities/details?cityName=${encodeURIComponent(cityName)}&numPeople=${numPeople}&numDays=${numDays}`;
 
         try {
@@ -101,9 +87,7 @@ export default function TravelBudgetScreen() {
                 let errorMessage = `Erro ao buscar orçamento: Status ${response.status}`;
                 try {
                     const errorData = await response.json();
-                    if (errorData.message) {
-                        errorMessage = errorData.message;
-                    }
+                    if (errorData.message) errorMessage = errorData.message;
                 } catch (e) {
                     console.warn('Resposta de erro da API sem corpo JSON: ' + response.status);
                 }
@@ -111,60 +95,43 @@ export default function TravelBudgetScreen() {
             }
 
             const data = await response.json();
-
-            // Garantindo que os valores são números válidos
             const newMin = Number(data.minBudget) || 0;
             const newMax = Number(data.maxBudget) || 5000;
             
-            // 1. Atualiza os limites do slider
             setMinBudgetSlider(newMin);
             setMaxBudgetSlider(newMax);
 
-            // 2. Garante que o valor ATUAL (budget) esteja dentro dos NOVOS limites
             if (budget < newMin || budget > newMax) {
-                // Redefine para o novo mínimo se estiver fora, ou para um valor intermediário
                 setBudget(Math.max(newMin, Math.min(budget, newMax)));
             }
         } catch (error) {
             console.error('Erro ao buscar detalhes do orçamento da cidade:', error.message);
             Alert.alert("Erro de Orçamento", error.message || "Erro desconhecido ao carregar dados.");
-
-            // Resetar sliders em caso de erro
             setMinBudgetSlider(100);
             setMaxBudgetSlider(5000);
             setBudget(1000);
         }
     };
     
-    // --- LÓGICA DE RE-CÁLCULO CENTRALIZADA (useEffect) ---
-    // Este hook garante que o orçamento total seja recalculado sempre que qualquer variável de entrada mudar.
+    // --- LÓGICA DE RE-CÁLCULO ---
     useEffect(() => {
-        // Calcula as variáveis dependentes
         const travelDays = getTravelDays(dateIn, dateOut);
         const numPeople = adults + children;
         
-        // Só tenta buscar se tivermos informações básicas suficientes
         if (destination && numPeople > 0 && travelDays > 0) {
             fetchCityBudget(destination, travelDays, numPeople);
         } else if (!destination) {
-             // Reseta o range do slider se não houver destino
             setMinBudgetSlider(0);
             setMaxBudgetSlider(5000);
             setBudget(1000);
         }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [destination, dateIn, dateOut, adults, children]);
 
-
-    // --- HANDLERS DE DESTINO ---
+    // --- HANDLERS ---
     const handleDestinationSelect = (selectedDestination) => {
-        // Ao selecionar, apenas atualiza o estado de destino.
-        // O useEffect acima se encarrega de chamar o fetchCityBudget
         setDestination(selectedDestination);
     };
 
-
-    // --- HANDLERS DE DATA CORRIGIDOS ---
     const handleDateChange = (type, event, selectedDate) => {
         if (type === 'in') setShowDateInPicker(false);
         if (type === 'out') setShowDateOutPicker(false);
@@ -174,35 +141,27 @@ export default function TravelBudgetScreen() {
                 const newDateIn = new Date(selectedDate);
                 let newDateOut = dateOut;
                 
-                // Se a nova data de entrada for posterior à saída, ajusta a saída.
                 if (dateOut && newDateIn > dateOut) {
                     newDateOut = newDateIn;
                     setDateOut(newDateOut);
                 }
                 setDateIn(newDateIn);
-                
-            } else { // type === 'out'
+            } else {
                 setDateOut(new Date(selectedDate));
             }
-            // O useEffect cuidará do re-cálculo do fetchCityBudget
         }
     };
 
-    // --- LÓGICA DE ATUALIZAÇÃO DE PESSOAS ---
     const updatePeopleCount = (newAdults, newChildren) => {
-        // Garante que o número total de pessoas seja pelo menos 1
         if (newAdults + newChildren === 0) {
             Alert.alert("Atenção", "Deve haver pelo menos 1 viajante (adulto ou criança).");
             return;
         }
-
         setAdults(newAdults);
         setChildren(newChildren);
-        
-        // O useEffect cuidará do re-cálculo do fetchCityBudget
     };
 
-    // --- FUNÇÃO CONCLUIR ---
+    // --- FUNÇÃO CONCLUIR CORRIGIDA ---
     const handleConcluir = async () => {
         const numPeople = adults + children;
         const travelDays = getTravelDays(dateIn, dateOut);
@@ -213,7 +172,6 @@ export default function TravelBudgetScreen() {
             return;
         }
         
-        // O orçamento é sempre válido pois o slider define um range.
         if (numPeople === 0) {
             Alert.alert('Número de Pessoas', 'Pelo menos um adulto ou criança deve ser selecionado.');
             return;
@@ -241,26 +199,26 @@ export default function TravelBudgetScreen() {
         try {
             userToken = await AsyncStorage.getItem('userToken');
             if (!userToken) {
-                Alert.alert('Erro de Autenticação', 'Você precisa estar logado para gerar um pacote. Por favor, faça login novamente.');
+                Alert.alert('Erro de Autenticação', 'Você precisa estar logado para gerar um pacote.');
                 setLoadingNavigation(false);
                 return;
             }
         } catch (e) {
             console.error('Erro ao recuperar token do AsyncStorage:', e);
-            Alert.alert('Erro', 'Não foi possível acessar seus dados de sessão. Tente novamente.');
+            Alert.alert('Erro', 'Não foi possível acessar seus dados de sessão.');
             setLoadingNavigation(false);
             return;
         }
 
         try {
             const response = await fetch(`${API_BASE_URL}/api/packages/generate`, {
-    method: 'POST',
-    headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${userToken}`,
-    },
-    body: JSON.stringify(packageParams),
-});
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${userToken}`,
+                },
+                body: JSON.stringify(packageParams),
+            });
 
             if (!response.ok) {
                 const errorData = await response.json();
@@ -268,17 +226,30 @@ export default function TravelBudgetScreen() {
             }
 
             const responseData = await response.json();
-            navigation.navigate('Confirmation', { packageData: responseData.package });
+            console.log('Resposta da API:', responseData); // DEBUG
+
+            // CORREÇÃO CRÍTICA - Estrutura correta dos dados
+            navigation.navigate('Confirmation', { 
+                packageData: responseData.package || responseData, // Aceita ambas as estruturas
+                travelData: {
+                    destination: destination,
+                    budget: budget,
+                    adults: adults,
+                    children: children,
+                    dateIn: dateIn.toISOString(),
+                    dateOut: dateOut.toISOString(),
+                    numDays: travelDays
+                }
+            });
         } catch (error) {
             console.error('Erro ao gerar pacote de viagem:', error);
-            Alert.alert('Erro', error.message || 'Não foi possível gerar o pacote de viagem. Tente novamente.');
+            Alert.alert('Erro', error.message || 'Não foi possível gerar o pacote de viagem.');
         } finally {
             setLoadingNavigation(false);
         }
     };
 
-    // --- NOVO COMPONENTE AUXILIAR (EMBUTIDO) ---
-    // Removendo 'setCount' das props, pois a atualização é feita via updatePeopleCount
+    // --- COMPONENTE COUNTER ---
     const Counter = ({ label, count, min }) => {
         const handleIncrement = () => {
             if (label === 'Adultos') {
@@ -289,12 +260,10 @@ export default function TravelBudgetScreen() {
         };
 
         const handleDecrement = () => {
-            // Condição base de decremento (se for maior que o mínimo)
             let canDecrement = count > min;
             
-            // Regra especial: o total de pessoas (adultos + crianças) deve ser > 0
             if (label === 'Adultos' && count === 1 && children === 0) {
-                canDecrement = false; // Não pode decrementar se for o último viajante
+                canDecrement = false;
             }
 
             if (canDecrement) {
@@ -307,7 +276,7 @@ export default function TravelBudgetScreen() {
         };
 
         const isMinAdultDisabled = label === 'Adultos' && count === 1 && children === 0;
-        const isDisabled = count === min && !isMinAdultDisabled; // Desabilita se for o mínimo, a menos que seja o último adulto
+        const isDisabled = count === min && !isMinAdultDisabled;
 
         return (
             <View style={styles.counterContainer}>
@@ -332,9 +301,8 @@ export default function TravelBudgetScreen() {
     return (
         <View style={styles.container}>
             <ScrollView contentContainerStyle={styles.scrollContent}>
-                {/* === ÁREA BRANCA (INPUTS e SLIDER) === */}
+                {/* ÁREA BRANCA */}
                 <View style={styles.whiteAreaContent}>
-                    {/* Input de Destino */}
                     <View style={styles.destinationContainer}>
                         <DestinationSearchInput
                             API_BASE_URL={API_BASE_URL}
@@ -343,7 +311,6 @@ export default function TravelBudgetScreen() {
                         />
                     </View>
 
-                    {/* Datas (InputRow) */}
                     <View style={styles.inputRow}>
                         <TouchableOpacity onPress={() => setShowDateInPicker(true)} style={styles.datePickerButton}>
                             <View style={styles.inputField}>
@@ -360,37 +327,23 @@ export default function TravelBudgetScreen() {
                         </TouchableOpacity>
                     </View>
 
-                    {/* Pessoas (InputRow) */}
                     <View style={[styles.inputRow, { marginBottom: 30 }]}>
-                        {/* MÍNIMO DE ADULTOS AJUSTADO PARA 1 */}
                         <View style={styles.peopleInput}>
-                            <Counter 
-                                label="Adultos" 
-                                count={adults} 
-                                min={1} // Mínimo de 1 adulto
-                            />
+                            <Counter label="Adultos" count={adults} min={1} />
                         </View>
-
                         <View style={styles.peopleInput}>
-                            <Counter 
-                                label="Crianças" 
-                                count={children} 
-                                min={0} 
-                            />
+                            <Counter label="Crianças" count={children} min={0} />
                         </View>
                     </View>
 
-                    {/* === SEÇÃO DE ORÇAMENTO === */}
                     <View style={styles.budgetSection}>
                         <View style={styles.sliderWrapper}>
-                            {/* É crucial não usar o 'key' no BudgetSlider, pois o BudgetSlider.js já contém um useEffect para se ajustar aos novos limites (minimumValue e maximumValue) sem ser totalmente remontado. */}
                             <BudgetSlider
                                 budget={budget}
                                 setBudget={setBudget}
                                 minimumValue={minBudgetSlider}
                                 maximumValue={maxBudgetSlider}
                             />
-                            {/* Exibir o range dinâmico */}
                             <Text style={styles.budgetRangeText}>
                                 Orçamento Estimado: {formatCurrency(minBudgetSlider)} a {formatCurrency(maxBudgetSlider)}
                             </Text>
@@ -398,10 +351,9 @@ export default function TravelBudgetScreen() {
                     </View>
                 </View>
 
-                {/* === ÁREA AZUL (IMAGEM E BOTÕES) === */}
+                {/* ÁREA AZUL */}
                 <View style={styles.blueAreaContent}>
                     <Image source={require('../assets/images/component/rio.png')} style={styles.bottomImage} />
-
                     <View style={styles.buttonRow}>
                         <TouchableOpacity 
                             style={[styles.actionButton, styles.editButton]}
@@ -409,7 +361,6 @@ export default function TravelBudgetScreen() {
                         >
                             <Text style={[styles.buttonText, styles.editButtonText]}>Voltar</Text>
                         </TouchableOpacity>
-
                         <TouchableOpacity
                             style={[styles.actionButton, styles.concluirButton]}
                             onPress={handleConcluir}
@@ -421,7 +372,7 @@ export default function TravelBudgetScreen() {
                 </View>
             </ScrollView>
 
-            {/* DatePickers (Componentes de Data) */}
+            {/* DATEPICKERS */}
             {showDateInPicker && (
                 <DateTimePicker
                     value={dateIn || new Date()}
@@ -449,86 +400,23 @@ export default function TravelBudgetScreen() {
 const styles = StyleSheet.create({
     container: { flex: 1, backgroundColor: '#fff' },
     scrollContent: { paddingBottom: 20 },
-
-    whiteAreaContent: {
-        paddingHorizontal: 20,
-        paddingTop: 50,
-        backgroundColor: '#fff',
-        paddingBottom: 10,
-    },
+    whiteAreaContent: { paddingHorizontal: 20, paddingTop: 50, backgroundColor: '#fff', paddingBottom: 10 },
     destinationContainer: { marginBottom: 20 },
-    
     inputRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 15 },
     datePickerButton: { flex: 1, marginHorizontal: 5 },
     peopleInput: { flex: 1, marginHorizontal: 5 },
-    
-    // Estilos de Data/Input Padrão
     dateLabel: { fontSize: 12, color: '#999', position: 'absolute', top: 5, left: 10, zIndex: 10 },
     dateText: { fontSize: 16, color: '#343a40', marginTop: 8, textAlign: 'center' },
-    inputField: {
-        backgroundColor: '#fff',
-        borderWidth: 1,
-        borderColor: '#ced4da',
-        borderRadius: 8,
-        padding: 12,
-        alignItems: 'center',
-        justifyContent: 'center',
-        height: 50,
-    },
-
-    // Estilos do Contador (NOVO)
-    counterContainer: {
-        backgroundColor: '#fff',
-        borderWidth: 1,
-        borderColor: '#ced4da',
-        borderRadius: 8,
-        paddingTop: 12,
-        paddingBottom: 5,
-        alignItems: 'center',
-        justifyContent: 'center',
-        height: 50,
-        position: 'relative',
-    },
-    counterControl: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        width: '100%',
-        paddingHorizontal: 10,
-    },
-    counterButton: {
-        padding: 5,
-        borderRadius: 5,
-    },
-    disabledButton: {
-        opacity: 0.5,
-    },
-    counterText: {
-        fontSize: 16,
-        fontWeight: '600',
-        color: '#343a40',
-    },
-
-    // Estilos do Orçamento
+    inputField: { backgroundColor: '#fff', borderWidth: 1, borderColor: '#ced4da', borderRadius: 8, padding: 12, alignItems: 'center', justifyContent: 'center', height: 50 },
+    counterContainer: { backgroundColor: '#fff', borderWidth: 1, borderColor: '#ced4da', borderRadius: 8, paddingTop: 12, paddingBottom: 5, alignItems: 'center', justifyContent: 'center', height: 50, position: 'relative' },
+    counterControl: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', width: '100%', paddingHorizontal: 10 },
+    counterButton: { padding: 5, borderRadius: 5 },
+    disabledButton: { opacity: 0.5 },
+    counterText: { fontSize: 16, fontWeight: '600', color: '#343a40' },
     budgetSection: { paddingHorizontal: 5, marginTop: 10, marginBottom: 30 },
     sliderWrapper: { alignItems: 'center', paddingHorizontal: 7, marginTop: 10 },
-    budgetRangeText: {
-        fontSize: 14,
-        color: '#6c757d',
-        marginTop: 15,
-        fontWeight: '500',
-    },
-
-    blueAreaContent: {
-        backgroundColor: '#3A8FFF',
-        paddingHorizontal: 20,
-        paddingBottom: 40,
-        paddingTop: 50,
-        borderTopLeftRadius: 50,
-        borderTopRightRadius: 50,
-        marginTop: -30,
-    },
-
+    budgetRangeText: { fontSize: 14, color: '#6c757d', marginTop: 15, fontWeight: '500' },
+    blueAreaContent: { backgroundColor: '#3A8FFF', paddingHorizontal: 20, paddingBottom: 40, paddingTop: 50, borderTopLeftRadius: 50, borderTopRightRadius: 50, marginTop: -30 },
     bottomImage: { width: '100%', height: 200, borderRadius: 15, marginBottom: 25, resizeMode: 'cover' },
     buttonRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 20 },
     actionButton: { flex: 1, paddingVertical: 15, borderRadius: 10, alignItems: 'center', marginHorizontal: 10, elevation: 5 },
@@ -536,4 +424,4 @@ const styles = StyleSheet.create({
     editButtonText: { color: '#3A8FFF' },
     concluirButton: { backgroundColor: '#1D4780' },
     buttonText: { fontSize: 18, fontWeight: 'bold', color: '#fff' },
-}); 
+});
