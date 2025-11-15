@@ -253,14 +253,14 @@ export default function TravelBudgetScreen() {
         }
 
         try {
-            const response = await fetch(`${API_BASE_URL}/packages/generate`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    Authorization: `Bearer ${userToken}`,
-                },
-                body: JSON.stringify(packageParams),
-            });
+            const response = await fetch(`${API_BASE_URL}/api/packages/generate`, {
+    method: 'POST',
+    headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${userToken}`,
+    },
+    body: JSON.stringify(packageParams),
+});
 
             if (!response.ok) {
                 const errorData = await response.json();
@@ -536,4 +536,4 @@ const styles = StyleSheet.create({
     editButtonText: { color: '#3A8FFF' },
     concluirButton: { backgroundColor: '#1D4780' },
     buttonText: { fontSize: 18, fontWeight: 'bold', color: '#fff' },
-});
+}); 
