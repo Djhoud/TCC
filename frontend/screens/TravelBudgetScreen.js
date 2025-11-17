@@ -59,7 +59,6 @@ export default function TravelBudgetScreen() {
         return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(amount);
     };
 
-    // --- FUNÇÃO DE BUSCA DO ORÇAMENTO ---
     const fetchCityBudget = async (cityName, numDays, numPeople) => {
         if (!cityName || numPeople === 0 || numDays === 0) return;
 
@@ -72,7 +71,8 @@ export default function TravelBudgetScreen() {
             return;
         }
         
-        const url = `${API_BASE_URL}/api/cities/details?cityName=${encodeURIComponent(cityName)}&numPeople=${numPeople}&numDays=${numDays}`;
+        // ALTERAÇÃO AQUI: mudar o endpoint para /api/cities/package
+        const url = `${API_BASE_URL}/api/cities/package?cityName=${encodeURIComponent(cityName)}&numPeople=${numPeople}&numDays=${numDays}`;
 
         try {
             const response = await fetch(url, {
