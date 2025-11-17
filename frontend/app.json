@@ -1,7 +1,10 @@
 {
-  "plugins": [
-    "expo-font",
-    "expo-router",
-    "expo-web-browser"
-  ]
+  "expo": {
+    "scheme": "goplanning",
+    "plugins": [
+      "expo-font",
+      "expo-router",
+      "expo-web-browser"
+    ]
+  }
 }

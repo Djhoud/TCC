@@ -2,6 +2,7 @@
 import bcrypt from 'bcryptjs';
 import { Request, Response, Router } from 'express';
 import jwt from 'jsonwebtoken';
+import fetch from 'node-fetch';
 import { db } from '../database';
 
 // Obtenha a chave secreta JWT das variáveis de ambiente.
@@ -10,6 +11,106 @@ import { db } from '../database';
 const JWT_SECRET = process.env.JWT_SECRET || 'fallback_secret_se_nao_encontrar_no_env';
 
 const router = Router();
+
+// Interface para a resposta da API do Google
+interface GoogleUserInfo {
+  sub: string;
+  name: string;
+  given_name?: string;
+  family_name?: string;
+  picture?: string;
+  email: string;
+  email_verified: boolean;
+}
+
+// Rota de Login com Google
+router.post('/google', async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { accessToken } = req.body;
+    
+    if (!accessToken) {
+      res.status(400).json({ message: 'Token de acesso é obrigatório' });
+      return;
+    }
+
+    // Verificar token com Google
+    const googleResponse = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+      headers: { Authorization: `Bearer ${accessToken}` }
+    });
+    
+    if (!googleResponse.ok) {
+      res.status(400).json({ message: 'Falha ao validar token com Google' });
+      return;
+    }
+    
+    const googleUser = await googleResponse.json() as GoogleUserInfo;
+    
+    if (!googleUser.email) {
+      res.status(400).json({ message: 'Token do Google inválido' });
+      return;
+    }
+    
+    // Verificar se usuário já existe
+    const [existingUsers]: any = await db.query(
+      'SELECT id, nome, email, documento, preferencias_completas, foto FROM usuarios WHERE email = ?', 
+      [googleUser.email]
+    );
+    
+    let userId: number;
+    let userData: any;
+
+    if (existingUsers.length === 0) {
+      // Criar novo usuário
+      const [result]: any = await db.query(
+        'INSERT INTO usuarios (nome, email, foto, google_id, preferencias_completas) VALUES (?, ?, ?, ?, ?)',
+        [googleUser.name, googleUser.email, googleUser.picture || null, googleUser.sub, false]
+      );
+      
+      userId = result.insertId;
+      userData = {
+        id: userId,
+        nome: googleUser.name,
+        email: googleUser.email,
+        documento: null,
+        foto: googleUser.picture || null,
+        preferencias_completas: false
+      };
+    } else {
+      // Usuário já existe
+      userId = existingUsers[0].id;
+      userData = existingUsers[0];
+      
+      // Atualizar dados do Google se necessário
+      if (!userData.foto && googleUser.picture) {
+        await db.query(
+          'UPDATE usuarios SET foto = ?, google_id = ? WHERE id = ?',
+          [googleUser.picture, googleUser.sub, userId]
+        );
+        userData.foto = googleUser.picture;
+      }
+    }
+
+    // Gerar JWT
+    const token = jwt.sign({ id: userId }, JWT_SECRET, {
+      expiresIn: '1d',
+    });
+
+    res.status(200).json({
+      message: 'Login com Google bem-sucedido',
+      token: token,
+      userId: userId,
+      name: userData.nome,
+      email: userData.email,
+      cpf: userData.documento,
+      photo: userData.foto,
+      preferenciasCompletas: userData.preferencias_completas
+    });
+
+  } catch (error) {
+    console.error('Erro no login com Google:', error);
+    res.status(500).json({ message: 'Erro interno no servidor' });
+  }
+});
 
 // Rota de Login
 router.post('/login', async (req: Request, res: Response): Promise<void> => {

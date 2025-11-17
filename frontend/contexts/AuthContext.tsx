@@ -1,8 +1,13 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import * as Google from 'expo-auth-session/providers/google';
+import * as WebBrowser from 'expo-web-browser';
 import React, { createContext, ReactNode, useContext, useEffect, useState } from "react";
 import { Alert } from 'react-native';
 
 const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL;
+
+// Completar a sessão do WebBrowser
+WebBrowser.maybeCompleteAuthSession();
 
 interface User {
   name: string;
@@ -23,6 +28,7 @@ interface AuthContextType {
   error: string | null;
   login: (email: string, senha: string) => Promise<boolean>;
   register: (nome: string, email: string, senha: string) => Promise<boolean>;
+  loginWithGoogle: () => Promise<boolean>;
   fetchUser: () => Promise<void>;
   API_BASE_URL: string;
 }
@@ -37,26 +43,94 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
-  // 1. FUNÇÃO fetchUser CORRIGIDA: Usa o token do estado atual e o endpoint correto
+  // Configuração do Google Auth
+  const [request, response, promptAsync] = Google.useAuthRequest({
+    clientId: process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID,
+    scopes: ['openid', 'profile', 'email'],
+    redirectUri: 'https://auth.expo.io',
+  });
+
+  // Função para login com Google
+  const loginWithGoogle = async (): Promise<boolean> => {
+    setError(null);
+    
+    try {
+      const result = await promptAsync();
+      
+      if (result?.type === 'success') {
+        const { access_token } = result.params;
+        
+        console.log('Token do Google recebido, enviando para backend...');
+        
+        const backendResponse = await fetch(`${API_BASE_URL}/api/auth/google`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ accessToken: access_token }),
+        });
+
+        const data = await backendResponse.json();
+        
+        if (backendResponse.ok) {
+          const userProfile: User = {
+            name: data.user?.name || data.nome || '',
+            email: data.user?.email || data.email || '',
+            cpf: data.user?.cpf || data.documento || null,
+            photo: data.user?.photo || data.foto || null,
+          };
+
+          await signIn(
+            data.token, 
+            data.userId || data.id, 
+            data.preferenciasCompletas || false, 
+            userProfile
+          );
+          
+          console.log('Login com Google realizado com sucesso');
+          return true;
+        } else {
+          const errorMessage = data.message || 'Erro no login com Google';
+          throw new Error(errorMessage);
+        }
+      } else if (result?.type === 'cancel') {
+        console.log('Login com Google cancelado pelo usuário');
+        return false;
+      } else {
+        throw new Error('Falha na autenticação com Google');
+      }
+    } catch (error: any) {
+      console.error('Erro no login com Google:', error);
+      setError(error.message || 'Erro ao fazer login com Google');
+      Alert.alert("Erro", error.message || "Não foi possível fazer login com Google.");
+      return false;
+    }
+  };
+
+  // Efeito para lidar com a resposta do Google
+  useEffect(() => {
+    if (response?.type === 'error') {
+      console.error('Erro na resposta do Google:', response.error);
+      setError(`Erro de autenticação: ${response.error?.message}`);
+    }
+  }, [response]);
+
   const fetchUser = async (userToken: string) => {
-    // Garante que o token existe antes de fazer a chamada
     if (!userToken) {
       console.log('fetchUser: Token ausente, pulando requisição.');
       return; 
     }
     
     try {
-      // Endpoint corrigido para /api/users/profile
       const response = await fetch(`${API_BASE_URL}/api/users/profile`, {
         headers: { Authorization: `Bearer ${userToken}` },
       });
 
-if (response.ok) {
-    const userData: User = await response.json();
-    console.log('Dados do Usuário Recebidos:', userData); // <--- Adicione este log!
-    setUser(userData);
+      if (response.ok) {
+        const userData: User = await response.json();
+        console.log('Dados do Usuário Recebidos:', userData);
+        setUser(userData);
       } else if (response.status === 401) {
-        // Se o token estiver expirado/inválido, força o logout para recadastrar
         console.error('Token expirado ou inválido (401). Forçando signOut.');
         await signOut();
       } else {
@@ -75,15 +149,12 @@ if (response.ok) {
         const storedUserId = await AsyncStorage.getItem("userId");
         const storedPrefsCompleted = await AsyncStorage.getItem("preferenciasCompletas");
         
-        // Log para diagnóstico (pode remover depois)
         console.log('Stored Token:', storedToken ? 'PRESENTE' : 'AUSENTE');
         
         if (storedToken && storedUserId) {
           setToken(storedToken);
           setUserId(parseInt(storedUserId, 10));
           setPreferenciasCompletas(storedPrefsCompleted === 'true');
-          
-          // 2. CHAMADA CORRIGIDA: Usa o token recuperado do AsyncStorage
           await fetchUser(storedToken); 
         }
       } catch (e: any) {
@@ -98,7 +169,6 @@ if (response.ok) {
 
   const signIn = async (userToken: string, id: number, prefsCompleted: boolean, userProfile: User) => {
     try {
-      // Log para verificar se o token é válido no momento do login
       console.log('Token recebido e prestes a ser salvo:', userToken); 
       
       await AsyncStorage.setItem('userToken', userToken);
@@ -171,7 +241,6 @@ if (response.ok) {
         photo: responseData.photo,
       };
 
-      // Chama signIn para salvar o token e atualizar o estado
       await signIn(responseData.token, responseData.userId || responseData.id, responseData.preferenciasCompletas, userProfile);
       return true;
     } catch (err: any) {
@@ -238,7 +307,7 @@ if (response.ok) {
       error,
       login,
       register,
-      // Passa a função fetchUser para ser usada em outras telas, usando o token do estado
+      loginWithGoogle,
       fetchUser: () => fetchUser(token || ''), 
       API_BASE_URL: API_BASE_URL || ''
     }}>
@@ -247,6 +316,7 @@ if (response.ok) {
   );
 };
 
+// Hook personalizado para usar o AuthContext
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (context === undefined) {
@@ -254,3 +324,6 @@ export const useAuth = () => {
   }
   return context;
 };
+
+// Export default para compatibilidade
+export default AuthContext;

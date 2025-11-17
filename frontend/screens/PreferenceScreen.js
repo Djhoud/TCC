@@ -1,4 +1,4 @@
-import { useNavigation } from '@react-navigation/native'; // <-- Adicione esta importação
+import { useNavigation } from '@react-navigation/native';
 import React, { useContext, useEffect, useState } from "react";
 import {
   ActivityIndicator,
@@ -15,8 +15,8 @@ import { AuthContext } from "../contexts/AuthContext";
 const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL;
 
 export default function PreferenceScreen() {
-  const { token, userId, updatePreferencesStatus, signOut } = useContext(AuthContext);
-  const navigation = useNavigation(); // <-- Adicione esta linha para obter o objeto de navegação
+  const { token, userId, updatePreferencesStatus } = useContext(AuthContext);
+  const navigation = useNavigation();
 
   const [currentStep, setCurrentStep] = useState(0);
   const [preferences, setPreferences] = useState({
@@ -31,7 +31,6 @@ export default function PreferenceScreen() {
   const [fetchingExistingPrefs, setFetchingExistingPrefs] = useState(true);
 
   const steps = [
-    // ... (Seus steps, sem alterações)
     {
       title: "Qual tipo de acomodação você prefere?",
       field: "accommodation_preferences",
@@ -89,7 +88,6 @@ export default function PreferenceScreen() {
     },
   ];
 
-  // ... (Seu useEffect para loadUserPreferences, sem alterações)
   useEffect(() => {
     const loadUserPreferences = async () => {
       setFetchingExistingPrefs(true);
@@ -113,7 +111,6 @@ export default function PreferenceScreen() {
     };
     loadUserPreferences();
   }, [token, userId]);
-
 
   const handleSelect = (option) => {
     const field = steps[currentStep].field;
@@ -161,11 +158,7 @@ export default function PreferenceScreen() {
       await updatePreferencesStatus(true);
       Alert.alert("Sucesso", "Preferências salvas com sucesso!");
       
-      // *** ADICIONE AQUI A NAVEGAÇÃO ***
-      // Isso substituirá a tela de preferências na pilha por 'Budget'.
-      // Se você quer que o usuário vá para a MainScreen após as preferências, mude para 'Main'.
-      // Se você quer que ele vá para a tela de busca de pacote, mude para 'Search'.
-      navigation.replace('Main'); // ou 'Main' ou 'Search', dependendo do seu fluxo
+      navigation.replace('Main');
 
     } catch (error) {
       Alert.alert("Erro", error.message || "Erro ao salvar preferências.");
@@ -188,7 +181,6 @@ export default function PreferenceScreen() {
     }
   };
 
-  // ... (Restante do seu componente, sem alterações)
   if (fetchingExistingPrefs) {
     return (
       <View style={styles.loadingContainer}>
@@ -259,16 +251,11 @@ export default function PreferenceScreen() {
             )}
           </TouchableOpacity>
         </View>
-
-        <TouchableOpacity style={styles.logoutButton} onPress={signOut}>
-          <Text style={styles.logoutButtonText}>Deslogar</Text>
-        </TouchableOpacity>
       </View>
     </View>
   );
 }
 
-// ... (Seus estilos, sem alterações)
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -366,17 +353,5 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontSize: 16,
     fontWeight: "bold",
-  },
-  logoutButton: {
-    backgroundColor: '#dc3545',
-    padding: 15,
-    borderRadius: 8,
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  logoutButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: 'bold',
   },
 });

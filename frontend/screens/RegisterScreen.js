@@ -1,3 +1,4 @@
+import { FontAwesome } from '@expo/vector-icons'; // 🔥 IMPORTAR ÍCONES
 import React, { useContext, useState } from 'react';
 import { ActivityIndicator, Alert, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import CloudBackground from "../components/CloudBackground";
@@ -7,11 +8,28 @@ export default function RegisterScreen({ navigation }) {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState(''); // 🔥 CAMPO CONFIRMAR SENHA
+  const [showPassword, setShowPassword] = useState(false); // 🔥 ESTADO PARA SENHA
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false); // 🔥 ESTADO PARA CONFIRMAR SENHA
   const { register, isLoading, error } = useContext(AuthContext);
 
+  // 🔥 FUNÇÕES PARA ALTERNAR VISUALIZAÇÃO DAS SENHAS
+  const toggleShowPassword = () => {
+    setShowPassword(!showPassword);
+  };
+
+  const toggleShowConfirmPassword = () => {
+    setShowConfirmPassword(!showConfirmPassword);
+  };
+
   const handleRegister = async () => {
-    if (!name || !email || !password) {
+    if (!name || !email || !password || !confirmPassword) {
       Alert.alert('Erro', 'Por favor, preencha todos os campos.');
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      Alert.alert('Erro', 'As senhas não coincidem.');
       return;
     }
 
@@ -46,14 +64,51 @@ export default function RegisterScreen({ navigation }) {
           autoCapitalize="none"
           placeholderTextColor="#666"
         />
-        <TextInput
-          placeholder="Senha"
-          value={password}
-          onChangeText={setPassword}
-          secureTextEntry
-          style={styles.input}
-          placeholderTextColor="#666"
-        />
+        
+        {/* 🔥 CAMPO DE SENHA COM ÍCONE DE OLHO */}
+        <View style={styles.passwordContainer}>
+          <TextInput
+            placeholder="Senha"
+            value={password}
+            onChangeText={setPassword}
+            secureTextEntry={!showPassword}
+            style={styles.passwordInput}
+            placeholderTextColor="#666"
+          />
+          <TouchableOpacity 
+            style={styles.eyeIcon}
+            onPress={toggleShowPassword}
+          >
+            <FontAwesome 
+              name={showPassword ? "eye-slash" : "eye"} 
+              size={20} 
+              color="#666" 
+            />
+          </TouchableOpacity>
+        </View>
+
+        {/* 🔥 CAMPO CONFIRMAR SENHA COM ÍCONE DE OLHO */}
+        <View style={styles.passwordContainer}>
+          <TextInput
+            placeholder="Confirmar Senha"
+            value={confirmPassword}
+            onChangeText={setConfirmPassword}
+            secureTextEntry={!showConfirmPassword}
+            style={styles.passwordInput}
+            placeholderTextColor="#666"
+          />
+          <TouchableOpacity 
+            style={styles.eyeIcon}
+            onPress={toggleShowConfirmPassword}
+          >
+            <FontAwesome 
+              name={showConfirmPassword ? "eye-slash" : "eye"} 
+              size={20} 
+              color="#666" 
+            />
+          </TouchableOpacity>
+        </View>
+
         <TouchableOpacity style={styles.button} onPress={handleRegister} disabled={isLoading}>
           {isLoading ? (
             <ActivityIndicator color="#fff" />
@@ -105,6 +160,27 @@ const styles = StyleSheet.create({
     borderColor: "#323D4D",
     borderWidth: 0.5,
     marginTop: 5,
+  },
+  // 🔥 ESTILOS PARA OS CAMPOS DE SENHA COM ÍCONE
+  passwordContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    width: 320,
+    height: 60,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 8,
+    borderColor: "#323D4D",
+    borderWidth: 0.5,
+    marginTop: 5,
+  },
+  passwordInput: {
+    flex: 1,
+    paddingHorizontal: 15,
+    height: '100%',
+  },
+  eyeIcon: {
+    padding: 10,
+    marginRight: 5,
   },
   button: {
     marginTop: 40,

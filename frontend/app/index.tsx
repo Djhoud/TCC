@@ -8,7 +8,8 @@ import "react-native-gesture-handler";
 import AppNavigator from "../Navi/AppNavigator";
 import { AuthProvider, useAuth } from "../contexts/AuthContext";
 
-function RootApp() {
+// 🔥 MOVER RootApp para DENTRO do AuthProvider
+function AppContent() {
   const { isLoading, token, preferenciasCompletas } = useAuth();
 
   if (isLoading) {
@@ -23,7 +24,7 @@ function RootApp() {
   return (
     <NavigationContainer>
       <AppNavigator 
-        isAuthenticated={!!token} // <-- CORRIGIDO: de 'isAuthenticate' para 'isAuthenticated'
+        isAuthenticated={!!token}
         hasCompletedPreferences={preferenciasCompletas || false} 
       />
     </NavigationContainer>
@@ -34,7 +35,7 @@ export default function App() {
   return (
     <View style={styles.container}>
       <AuthProvider>
-        <RootApp /> 
+        <AppContent /> {/* 🔥 AGORA ESTÁ DENTRO DO PROVIDER */}
       </AuthProvider>
     </View>
   );
