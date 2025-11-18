@@ -2,6 +2,7 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import express, { ErrorRequestHandler } from 'express';
 import verifyToken from './middleware/authMiddleware';
+import alternativeRoutes from './routes/alternativeRoutes';
 import authRoutes from './routes/authRoutes';
 import cityRoutes from './routes/cityRoutes';
 import packageRoutes from './routes/packageRoutes';
@@ -20,6 +21,8 @@ app.use(cors({
 }));
 
 app.use(express.json());
+
+app.use('/api/alternatives', verifyToken, alternativeRoutes);
 
 // Rotas de autenticação (sem proteção)
 app.use('/auth', authRoutes);
