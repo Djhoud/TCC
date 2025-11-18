@@ -8,7 +8,7 @@ const router = Router();
 router.get('/suggestions', authenticateToken, cityController.getCitiesController);
 
 // Rota para obter detalhes DIÁRIOS da cidade (custo base por dia)
-router.get('/details', authenticateToken, cityController.getCityDailyDetailsController);
+//router.get('/details', authenticateToken, cityController.getCityDailyDetailsController);
 
 // Rota para calcular o ORÇAMENTO TOTAL do pacote (usa numPeople e numDays)
 router.get('/package', authenticateToken, cityController.calculatePackageBudgetController);

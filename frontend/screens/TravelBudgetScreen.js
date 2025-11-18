@@ -59,64 +59,89 @@ export default function TravelBudgetScreen() {
         return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(amount);
     };
 
-    const fetchCityBudget = async (cityName, numDays, numPeople) => {
-        if (!cityName || numPeople === 0 || numDays === 0) return;
+// ✅ CORREÇÃO FINAL NO FRONTEND
+const fetchCityBudget = async (cityName, numDays, numPeople) => {
+    if (!cityName || numPeople === 0 || numDays === 0) {
+        console.log('⚠️ Dados insuficientes para calcular orçamento');
+        return;
+    }
 
-        const userToken = await AsyncStorage.getItem('userToken');
-        if (!userToken) {
-            console.warn('Token de usuário não encontrado.');
-            setMinBudgetSlider(100);
-            setMaxBudgetSlider(5000);
-            setBudget(1000);
-            return;
+    const userToken = await AsyncStorage.getItem('userToken');
+    if (!userToken) {
+        console.warn('Token de usuário não encontrado.');
+        setMinBudgetSlider(500);
+        setMaxBudgetSlider(3000);
+        setBudget(1500);
+        return;
+    }
+    
+    const url = `${API_BASE_URL}/api/cities/package?cityName=${encodeURIComponent(cityName)}&numPeople=${numPeople}&numDays=${numDays}`;
+
+    try {
+        console.log('🔄 Buscando orçamento para:', { cityName, numPeople, numDays });
+        
+        const response = await fetch(url, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${userToken}`,
+                'Content-Type': 'application/json',
+            },
+        });
+
+        if (!response.ok) {
+            throw new Error(`Erro ${response.status}: ${response.statusText}`);
+        }
+
+        const data = await response.json();
+        
+        console.log('✅ Resposta do backend:', data);
+        
+        // ✅ VALIDAÇÃO ROBUSTA
+        let minValue = Number(data.minBudget);
+        let maxValue = Number(data.maxBudget);
+        
+        if (isNaN(minValue) || isNaN(maxValue) || minValue >= maxValue) {
+            console.warn('Valores inválidos do backend, usando fallback');
+            minValue = 500;
+            maxValue = 3000;
         }
         
-        // ALTERAÇÃO AQUI: mudar o endpoint para /api/cities/package
-        const url = `${API_BASE_URL}/api/cities/package?cityName=${encodeURIComponent(cityName)}&numPeople=${numPeople}&numDays=${numDays}`;
-
-        try {
-            const response = await fetch(url, {
-                method: 'GET',
-                headers: {
-                    'Authorization': `Bearer ${userToken}`,
-                    'Content-Type': 'application/json',
-                },
-            });
-
-            if (!response.ok) {
-                let errorMessage = `Erro ao buscar orçamento: Status ${response.status}`;
-                try {
-                    const errorData = await response.json();
-                    if (errorData.message) errorMessage = errorData.message;
-                } catch (e) {
-                    console.warn('Resposta de erro da API sem corpo JSON: ' + response.status);
-                }
-                throw new Error(errorMessage);
-            }
-
-            const data = await response.json();
-            const newMin = Number(data.minBudget) || 0;
-            const newMax = Number(data.maxBudget) || 5000;
-            
-            setMinBudgetSlider(newMin);
-            setMaxBudgetSlider(newMax);
-
-            if (budget < newMin || budget > newMax) {
-                setBudget(Math.max(newMin, Math.min(budget, newMax)));
-            }
-        } catch (error) {
-            console.error('Erro ao buscar detalhes do orçamento da cidade:', error.message);
-            Alert.alert("Erro de Orçamento", error.message || "Erro desconhecido ao carregar dados.");
-            setMinBudgetSlider(100);
-            setMaxBudgetSlider(5000);
-            setBudget(1000);
-        }
-    };
-    
+        // ✅ LIMITES DE SEGURANÇA
+        const MAX_SAFE_BUDGET = 10000;
+        const adjustedMin = Math.min(minValue, MAX_SAFE_BUDGET);
+        const adjustedMax = Math.min(maxValue, MAX_SAFE_BUDGET * 1.2);
+        
+        // Garantir faixa mínima
+        const finalMin = Math.max(100, adjustedMin);
+        const finalMax = Math.max(finalMin + 200, adjustedMax);
+        
+        console.log('🎯 Valores ajustados para slider:', { finalMin, finalMax });
+        
+        setMinBudgetSlider(finalMin);
+        setMaxBudgetSlider(finalMax);
+        setBudget(Math.round((finalMin + finalMax) / 2));
+        
+    } catch (error) {
+        console.error('❌ Erro ao buscar orçamento:', error.message);
+        Alert.alert("Erro", "Não foi possível carregar os valores de orçamento.");
+        // Valores conservadores como fallback
+        setMinBudgetSlider(500);
+        setMaxBudgetSlider(3000);
+        setBudget(1500);
+    }
+};
     // --- LÓGICA DE RE-CÁLCULO ---
     useEffect(() => {
         const travelDays = getTravelDays(dateIn, dateOut);
         const numPeople = adults + children;
+        
+        console.log('DEBUG - Recalculando orçamento:', {
+            destination,
+            travelDays, 
+            numPeople,
+            dateIn: dateIn?.toISOString(),
+            dateOut: dateOut?.toISOString()
+        });
         
         if (destination && numPeople > 0 && travelDays > 0) {
             fetchCityBudget(destination, travelDays, numPeople);
@@ -161,7 +186,7 @@ export default function TravelBudgetScreen() {
         setChildren(newChildren);
     };
 
-    // --- FUNÇÃO CONCLUIR CORRIGIDA ---
+    // --- FUNÇÃO CONCLUIR ---
     const handleConcluir = async () => {
         const numPeople = adults + children;
         const travelDays = getTravelDays(dateIn, dateOut);
