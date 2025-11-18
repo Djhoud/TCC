@@ -8,7 +8,7 @@ import "react-native-gesture-handler";
 import AppNavigator from "../Navi/AppNavigator";
 import { AuthProvider, useAuth } from "../contexts/AuthContext";
 
-// 🔥 MOVER RootApp para DENTRO do AuthProvider
+//  MOVER RootApp para DENTRO do AuthProvider
 function AppContent() {
   const { isLoading, token, preferenciasCompletas } = useAuth();
 
@@ -35,7 +35,7 @@ export default function App() {
   return (
     <View style={styles.container}>
       <AuthProvider>
-        <AppContent /> {/* 🔥 AGORA ESTÁ DENTRO DO PROVIDER */}
+        <AppContent /> {/*  AGORA ESTÁ DENTRO DO PROVIDER */}
       </AuthProvider>
     </View>
   );
