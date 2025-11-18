@@ -1,5 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useNavigation } from '@react-navigation/native'; // ✅ ADICIONE ESTA LINHA
+import { useNavigation } from '@react-navigation/native'; // ✅ ADICIONAR IMPORT
 import React, { useEffect, useState } from "react";
 import {
   FlatList,
@@ -17,7 +17,7 @@ export default function SearchScreen() {
   const [searchQuery, setSearchQuery] = useState("");
   const [publicPackages, setPublicPackages] = useState([]);
   const [loading, setLoading] = useState(true);
-  const navigation = useNavigation(); // ✅ ADICIONE ESTA LINHA
+  const navigation = useNavigation(); // ✅ DECLARAR NAVIGATION
 
   // ✅ CARREGAR PACOTES PÚBLICOS
   const loadPublicPackages = async () => {
@@ -46,7 +46,7 @@ export default function SearchScreen() {
     });
 
     return unsubscribe;
-  }, [navigation]); // ✅ ADICIONE navigation COMO DEPENDÊNCIA
+  }, [navigation]);
 
   const filteredTravels = publicPackages.filter((travel) =>
     travel.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -77,11 +77,14 @@ export default function SearchScreen() {
             data={filteredTravels}
             keyExtractor={(item) => item.id}
             renderItem={({ item }) => (
-              <TouchableOpacity style={styles.travelCardContainer}>
+              <TouchableOpacity 
+                style={styles.travelCardContainer}
+                onPress={() => navigation.navigate('PackageDetail', { package: item })}
+              >
                 <TravelCard travel={item} />
               </TouchableOpacity>
             )}
-            contentContainerStyle={{ paddingBottom: 100 }}
+            contentContainerStyle={{ padding: 20, paddingBottom: 100 }}
             style={{ width: "100%" }}
             ListEmptyComponent={
               <Text style={styles.emptyText}>

@@ -143,51 +143,54 @@ export default function ProfileScreen() {
         </>
       )
     },
-    {
-      key: "2",
-      content: (
+    // No ProfileScreen.js, atualize a parte do FlatList no key: "2"
+{
+    key: "2",
+    content: (
         <View style={{ flex: 1, padding: 20 }}>
-          <TextInput
-            placeholder="Buscar viagens..."
-            placeholderTextColor="#888"
-            style={{
-              height: 50,
-              borderWidth: 1,
-              borderColor: "#ccc",
-              borderRadius: 10,
-              paddingHorizontal: 15,
-              marginBottom: 15,
-            }}
-            value={searchQuery}
-            onChangeText={(text) => setSearchQuery(text)}
-          />
-          
-          {loading ? (
-            <Text style={styles.loadingText}>Carregando histórico...</Text>
-          ) : (
-            <FlatList
-              data={travels.filter((t) =>
-                t.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                t.destination.toLowerCase().includes(searchQuery.toLowerCase())
-              )}
-              keyExtractor={(item) => item.id}
-              renderItem={({ item }) => (
-                <TouchableOpacity>
-                  <TravelCard travel={item} />
-                </TouchableOpacity>
-              )}
-              contentContainerStyle={{ gap: 12, paddingBottom: 100 }}
-              showsVerticalScrollIndicator={false}
-              ListEmptyComponent={() => (
-                <Text style={styles.emptyHistoryText}>
-                  Nenhum histórico de viagem encontrado.
-                </Text>
-              )}
+            <TextInput
+                placeholder="Buscar viagens..."
+                placeholderTextColor="#888"
+                style={{
+                    height: 50,
+                    borderWidth: 1,
+                    borderColor: "#ccc",
+                    borderRadius: 10,
+                    paddingHorizontal: 15,
+                    marginBottom: 15,
+                }}
+                value={searchQuery}
+                onChangeText={(text) => setSearchQuery(text)}
             />
-          )}
+            
+            {loading ? (
+                <Text style={styles.loadingText}>Carregando histórico...</Text>
+            ) : (
+                <FlatList
+                    data={travels.filter((t) =>
+                        t.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                        t.destination.toLowerCase().includes(searchQuery.toLowerCase())
+                    )}
+                    keyExtractor={(item) => item.id}
+                    renderItem={({ item }) => (
+                        <TouchableOpacity 
+                            onPress={() => navigation.navigate('PackageDetail', { package: item })}
+                        >
+                            <TravelCard travel={item} />
+                        </TouchableOpacity>
+                    )}
+                    contentContainerStyle={{ gap: 12, paddingBottom: 100 }}
+                    showsVerticalScrollIndicator={false}
+                    ListEmptyComponent={() => (
+                        <Text style={styles.emptyHistoryText}>
+                            Nenhum histórico de viagem encontrado.
+                        </Text>
+                    )}
+                />
+            )}
         </View>
-      ),
-    }
+    ),
+}
   ];
 
   return (
