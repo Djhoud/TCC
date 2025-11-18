@@ -1,11 +1,13 @@
-import React, { useState } from "react";
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useNavigation } from '@react-navigation/native'; // ✅ ADICIONE ESTA LINHA
+import React, { useEffect, useState } from "react";
 import {
-    FlatList,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  FlatList,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import CloudBackReverse from "../components/CloudBackReverse";
 import Navbar from "../components/Navbar";
@@ -13,44 +15,42 @@ import TravelCard from "../components/TravelCard";
 
 export default function SearchScreen() {
   const [searchQuery, setSearchQuery] = useState("");
+  const [publicPackages, setPublicPackages] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const navigation = useNavigation(); // ✅ ADICIONE ESTA LINHA
 
-  const travelData = [
-    {
-      id: "1",
-      title: "Viagem dos Sonhos",
-      location: "Rio de Janeiro",
-      date: "24/12/2024",
-      stars: 4,
-      image: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e",
-    },
-    {
-      id: "2",
-      title: "Trilha Selvagem",
-      location: "Chapada Diamantina",
-      date: "10/01/2025",
-      stars: 5,
-      image: "https://images.unsplash.com/photo-1605032652768-f63f57c31e06",
-    },
-    {
-      id: "3",
-      title: "Cidade Encantada",
-      location: "Gramado",
-      date: "14/07/2025",
-      stars: 3,
-      image: "https://images.unsplash.com/photo-1551907234-70d4fa7c39aa",
-    },
-    {
-      id: "4",
-      title: "Aventura Gelada",
-      location: "Patagônia",
-      date: "05/08/2025",
-      stars: 5,
-      image: "https://images.unsplash.com/photo-1549887534-2c5b05fe7082",
-    },
-  ];
+  // ✅ CARREGAR PACOTES PÚBLICOS
+  const loadPublicPackages = async () => {
+    try {
+      const publicData = await AsyncStorage.getItem('publicPackages');
+      if (publicData) {
+        const parsedPackages = JSON.parse(publicData);
+        setPublicPackages(parsedPackages);
+      }
+    } catch (error) {
+      console.error('Erro ao carregar pacotes públicos:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  const filteredTravels = travelData.filter((travel) =>
-    travel.title.toLowerCase().includes(searchQuery.toLowerCase())
+  // ✅ CARREGAR AO MONTAR A TELA
+  useEffect(() => {
+    loadPublicPackages();
+  }, []);
+
+  // ✅ RECARREGAR QUANDO A TELA GANHAR FOCO
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('focus', () => {
+      loadPublicPackages();
+    });
+
+    return unsubscribe;
+  }, [navigation]); // ✅ ADICIONE navigation COMO DEPENDÊNCIA
+
+  const filteredTravels = publicPackages.filter((travel) =>
+    travel.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    travel.destination.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   return (
@@ -60,7 +60,7 @@ export default function SearchScreen() {
         <CloudBackReverse />
         <Text style={styles.header}>Buscar Viagens</Text>
         <TextInput
-          placeholder="Digite o nome da viagem..."
+          placeholder="Digite o nome da viagem ou destino..."
           placeholderTextColor="#aaa"
           value={searchQuery}
           onChangeText={setSearchQuery}
@@ -70,20 +70,29 @@ export default function SearchScreen() {
 
       {/* Área Inferior */}
       <View style={styles.bottomArea}>
-        <FlatList
-          data={filteredTravels}
-          keyExtractor={(item) => item.id}
-          renderItem={({ item }) => (
-            <TouchableOpacity style={styles.travelCardContainer}>
-              <TravelCard travel={item} />
-            </TouchableOpacity>
-          )}
-          contentContainerStyle={{ paddingBottom: 100 }}
-          style={{ width: "100%" }}
-          ListEmptyComponent={
-            <Text style={styles.emptyText}>Nenhuma viagem encontrada.</Text>
-          }
-        />
+        {loading ? (
+          <Text style={styles.loadingText}>Carregando viagens públicas...</Text>
+        ) : (
+          <FlatList
+            data={filteredTravels}
+            keyExtractor={(item) => item.id}
+            renderItem={({ item }) => (
+              <TouchableOpacity style={styles.travelCardContainer}>
+                <TravelCard travel={item} />
+              </TouchableOpacity>
+            )}
+            contentContainerStyle={{ paddingBottom: 100 }}
+            style={{ width: "100%" }}
+            ListEmptyComponent={
+              <Text style={styles.emptyText}>
+                {searchQuery 
+                  ? 'Nenhuma viagem pública encontrada.' 
+                  : 'Ainda não há viagens públicas disponíveis.'
+                }
+              </Text>
+            }
+          />
+        )}
       </View>
 
       <Navbar />
@@ -137,5 +146,10 @@ const styles = StyleSheet.create({
     textAlign: "center",
     marginTop: 50,
   },
+  loadingText: {
+    fontSize: 16,
+    color: "#888",
+    textAlign: "center",
+    marginTop: 50,
+  },
 });
- 

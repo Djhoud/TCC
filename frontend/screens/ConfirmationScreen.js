@@ -1,7 +1,8 @@
 import { FontAwesome5 } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import React, { useEffect, useState } from 'react';
-import { Alert, Dimensions, FlatList, Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, Dimensions, FlatList, Keyboard, Modal, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import Navbar from '../components/Navbar';
 
 const { height: screenHeight } = Dimensions.get('window');
@@ -27,6 +28,9 @@ export default function ConfirmationScreen() {
     const [selectedItem, setSelectedItem] = useState(null);
     const [modalVisible, setModalVisible] = useState(false);
     const [currentType, setCurrentType] = useState('');
+    const [saveModalVisible, setSaveModalVisible] = useState(false);
+    const [packageName, setPackageName] = useState('');
+    const [isPublic, setIsPublic] = useState(false);
     const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL;
 
     // DEBUG
@@ -216,6 +220,84 @@ export default function ConfirmationScreen() {
         Alert.alert('Sucesso', 'Item atualizado com sucesso!');
     };
 
+    // ✅ FUNÇÃO PARA SALVAR PACOTE NO HISTÓRICO
+    const savePackageToHistory = async () => {
+        if (!packageName.trim()) {
+            Alert.alert('Erro', 'Por favor, insira um nome para o pacote');
+            return;
+        }
+
+        try {
+            // Buscar histórico atual
+            const existingHistory = await AsyncStorage.getItem('travelHistory');
+            const historyArray = existingHistory ? JSON.parse(existingHistory) : [];
+
+            // Buscar pacotes públicos atuais
+            const existingPublicPackages = await AsyncStorage.getItem('publicPackages');
+            const publicPackagesArray = existingPublicPackages ? JSON.parse(existingPublicPackages) : [];
+
+            // Criar objeto do pacote
+            const packageToSave = {
+                id: Date.now().toString(), // ID único baseado no timestamp
+                title: packageName.trim(),
+                destination: travelData.destination,
+                dateIn: travelData.dateIn,
+                dateOut: travelData.dateOut,
+                adults: travelData.adults,
+                children: travelData.children,
+                budget: travelData.budget,
+                totalCost: displayedTotalCost,
+                packageData: finalPackageData,
+                travelData: travelData,
+                isPublic: isPublic,
+                createdAt: new Date().toISOString(),
+                // Informações resumidas para exibição rápida
+                summary: {
+                    accommodation: items.accommodation?.nome || 'Não definida',
+                    transport: items.destinationTransport?.tipo || 'Não definido',
+                    activitiesCount: items.activities?.length || 0,
+                    foodCount: items.food?.length || 0
+                }
+            };
+
+            // Adicionar novo pacote ao início do array do histórico
+            const updatedHistory = [packageToSave, ...historyArray];
+
+            // Salvar no histórico do usuário
+            await AsyncStorage.setItem('travelHistory', JSON.stringify(updatedHistory));
+            
+            // Se for público, adicionar também aos pacotes públicos
+            if (isPublic) {
+                const updatedPublicPackages = [packageToSave, ...publicPackagesArray];
+                await AsyncStorage.setItem('publicPackages', JSON.stringify(updatedPublicPackages));
+            }
+            
+            // Fechar modal e mostrar sucesso
+            setSaveModalVisible(false);
+            setPackageName('');
+            setIsPublic(false);
+            
+            Alert.alert(
+                'Sucesso!', 
+                `Pacote "${packageName}" salvo ${isPublic ? 'publicamente' : 'no seu histórico'}!`,
+                [
+                    {
+                        text: isPublic ? 'Ver Busca' : 'Ver Histórico',
+                        onPress: () => navigation.navigate(isPublic ? 'Search' : 'Profile')
+                    },
+                    {
+                        text: 'Continuar',
+                        style: 'cancel'
+                    }
+                ]
+            );
+
+        } catch (error) {
+            console.error('Erro ao salvar pacote:', error);
+            Alert.alert('Erro', 'Não foi possível salvar o pacote');
+        }
+    };
+
     // ✅ COMPONENTE DE ITEM EDITÁVEL
     const EditableItem = ({ item, type, travelData, onEdit, isSingle = false }) => {
         const realCost = calculateTotalCost(item, type, travelData);
@@ -315,6 +397,88 @@ export default function ConfirmationScreen() {
                     >
                         <Text style={styles.closeButtonText}>Cancelar</Text>
                     </TouchableOpacity>
+                </View>
+            </View>
+        </Modal>
+    );
+
+    // ✅ MODAL PARA INSERIR NOME DO PACOTE
+    const SavePackageModal = () => (
+        <Modal
+            animationType="slide"
+            transparent={true}
+            visible={saveModalVisible}
+            onRequestClose={() => {
+                setSaveModalVisible(false);
+                setPackageName('');
+                setIsPublic(false);
+            }}
+        >
+            <View style={styles.modalContainer}>
+                <View style={styles.saveModalContent}>
+                    <Text style={styles.saveModalTitle}>Salvar Pacote</Text>
+                    <Text style={styles.saveModalSubtitle}>
+                        Dê um nome para seu pacote de viagem para {travelData.destination}
+                    </Text>
+                    
+                    <TextInput
+                        style={styles.packageNameInput}
+                        placeholder="Ex: Minha viagem para o Rio"
+                        placeholderTextColor="#999"
+                        value={packageName}
+                        onChangeText={setPackageName}
+                        autoFocus={true}
+                        maxLength={50}
+                        onSubmitEditing={Keyboard.dismiss} // ✅ CORREÇÃO: Evita recuo do teclado
+                        blurOnSubmit={false} // ✅ CORREÇÃO: Mantém teclado aberto
+                    />
+                    
+                    <Text style={styles.charCount}>
+                        {packageName.length}/50 caracteres
+                    </Text>
+
+                    {/* ✅ CHECKBOX PARA PACOTE PÚBLICO */}
+                    <TouchableOpacity 
+                        style={styles.publicCheckboxContainer}
+                        onPress={() => setIsPublic(!isPublic)}
+                    >
+                        <View style={[styles.checkbox, isPublic && styles.checkboxChecked]}>
+                            {isPublic && <FontAwesome5 name="check" size={12} color="#fff" />}
+                        </View>
+                        <Text style={styles.publicCheckboxText}>
+                            Tornar este pacote público
+                        </Text>
+                    </TouchableOpacity>
+
+                    <Text style={styles.publicDescription}>
+                        {isPublic 
+                            ? '📢 Este pacote aparecerá para outros usuários na tela de Busca'
+                            : '🔒 Este pacote ficará visível apenas para você no seu histórico'
+                        }
+                    </Text>
+
+                    <View style={styles.saveModalButtons}>
+                        <TouchableOpacity 
+                            style={[styles.saveModalButton, styles.cancelSaveButton]}
+                            onPress={() => {
+                                setSaveModalVisible(false);
+                                setPackageName('');
+                                setIsPublic(false);
+                            }}
+                        >
+                            <Text style={styles.cancelSaveButtonText}>Cancelar</Text>
+                        </TouchableOpacity>
+                        
+                        <TouchableOpacity 
+                            style={[styles.saveModalButton, styles.confirmSaveButton]}
+                            onPress={savePackageToHistory}
+                            disabled={!packageName.trim()}
+                        >
+                            <Text style={styles.confirmSaveButtonText}>
+                                {isPublic ? 'Salvar Público' : 'Salvar'}
+                            </Text>
+                        </TouchableOpacity>
+                    </View>
                 </View>
             </View>
         </Modal>
@@ -478,7 +642,7 @@ export default function ConfirmationScreen() {
                 <View style={styles.actionArea}>
                     <TouchableOpacity 
                         style={[styles.actionButton, styles.saveButton]}
-                        onPress={() => Alert.alert("Salvar", "Pacote atualizado com sucesso!")}
+                        onPress={() => setSaveModalVisible(true)}
                     >
                         <Text style={styles.buttonText}>Salvar Pacote</Text>
                     </TouchableOpacity>
@@ -493,6 +657,7 @@ export default function ConfirmationScreen() {
             </ScrollView>
 
             <AlternativesModal />
+            <SavePackageModal />
             <Navbar />
         </View>
     );
@@ -663,6 +828,111 @@ const styles = StyleSheet.create({
     },
     closeButtonText: { 
         color: 'white', 
+        fontWeight: 'bold',
+        fontSize: 16,
+    },
+    // Modal de salvar pacote
+    saveModalContent: {
+        backgroundColor: 'white',
+        borderRadius: 20,
+        padding: 25,
+        width: '90%',
+        alignSelf: 'center',
+        alignItems: 'center',
+    },
+    saveModalTitle: {
+        fontSize: 22,
+        fontWeight: 'bold',
+        color: '#1D4780',
+        marginBottom: 10,
+        textAlign: 'center',
+    },
+    saveModalSubtitle: {
+        fontSize: 14,
+        color: '#666',
+        textAlign: 'center',
+        marginBottom: 20,
+        lineHeight: 20,
+    },
+    packageNameInput: {
+        width: '100%',
+        height: 50,
+        borderWidth: 1,
+        borderColor: '#3A8FFF',
+        borderRadius: 10,
+        paddingHorizontal: 15,
+        fontSize: 16,
+        color: '#333',
+        backgroundColor: '#fff',
+    },
+    charCount: {
+        alignSelf: 'flex-end',
+        fontSize: 12,
+        color: '#999',
+        marginTop: 5,
+        marginBottom: 20,
+    },
+    // Checkbox styles
+    publicCheckboxContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: 15,
+        padding: 10,
+        backgroundColor: '#f8f9fa',
+        borderRadius: 10,
+        width: '100%',
+    },
+    checkbox: {
+        width: 20,
+        height: 20,
+        borderWidth: 2,
+        borderColor: '#3A8FFF',
+        borderRadius: 4,
+        marginRight: 10,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    checkboxChecked: {
+        backgroundColor: '#3A8FFF',
+    },
+    publicCheckboxText: {
+        fontSize: 16,
+        color: '#333',
+        fontWeight: '500',
+    },
+    publicDescription: {
+        fontSize: 14,
+        color: '#666',
+        textAlign: 'center',
+        marginBottom: 20,
+        lineHeight: 18,
+        fontStyle: 'italic',
+    },
+    saveModalButtons: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        width: '100%',
+    },
+    saveModalButton: {
+        flex: 1,
+        paddingVertical: 15,
+        borderRadius: 10,
+        alignItems: 'center',
+        marginHorizontal: 5,
+    },
+    cancelSaveButton: {
+        backgroundColor: '#6c757d',
+    },
+    confirmSaveButton: {
+        backgroundColor: '#3A8FFF',
+    },
+    cancelSaveButtonText: {
+        color: '#fff',
+        fontWeight: 'bold',
+        fontSize: 16,
+    },
+    confirmSaveButtonText: {
+        color: '#fff',
         fontWeight: 'bold',
         fontSize: 16,
     },
