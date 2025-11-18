@@ -8,7 +8,6 @@ import ConfirmationScreen from '../screens/ConfirmationScreen';
 import LoginScreen from '../screens/LoginScreen';
 import MainScreen from '../screens/MainScreen';
 import PreferenceScreen from '../screens/PreferenceScreen';
-import RegisterScreen from '../screens/RegisterScreen';
 import SearchScreen from '../screens/SearchScreen';
 import TravelBudgetScreen from '../screens/TravelBudgetScreen';
 import ProfileScreen from '../screens/UserScreen'; // Renomeei de UserScreen para ProfileScreen, conforme o nome do arquivo
@@ -38,7 +37,7 @@ const AppNavigator = ({ isAuthenticated, hasCompletedPreferences }: AppNavigator
     >
       {/* Telas de Autenticação e Cadastro (Públicas) */}
       <Stack.Screen name="Login" component={LoginScreen} />
-      <Stack.Screen name="Register" component={RegisterScreen} />
+      {/*<Stack.Screen name="Register" component={RegisterScreen} />*/}
       <Stack.Screen name="Preference" component={PreferenceScreen} />
 
       {/* Telas Principais do Aplicativo (Privadas) */}

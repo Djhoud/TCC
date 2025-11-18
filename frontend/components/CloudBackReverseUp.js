@@ -14,7 +14,7 @@ export default function CloudBackReverse() {
       <Image source={require("../assets/images/component/nuvem.png")} style={[styles.cloudSmall, styles.cloud7]} />
       <Image source={require("../assets/images/component/nuvem2.png")} style={[styles.cloudSmall, styles.cloud8, styles.rotated]} />
       <Image source={require("../assets/images/component/nuvem.png")} style={[styles.cloudSmall, styles.cloud11]} />
-      <Image source={require("../assets/images/component/nuvem2.png")} style={[styles.nuvem2mall, styles.cloud12, styles.rotated]} />
+      <Image source={require("../assets/images/component/nuvem2.png")} style={[styles.cloudSmall, styles.cloud12, styles.rotated]} />
     </View>
   );
 }

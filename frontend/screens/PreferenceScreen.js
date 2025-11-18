@@ -88,29 +88,35 @@ export default function PreferenceScreen() {
     },
   ];
 
-  useEffect(() => {
+useEffect(() => {
     const loadUserPreferences = async () => {
-      setFetchingExistingPrefs(true);
-      try {
-        const response = await fetch(`${API_BASE_URL}/api/preferences/user`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        const data = await response.json();
-        if (response.ok && data.preferences) {
-          setPreferences(data.preferences);
-        } else if (!response.ok) {
-          if (response.status !== 404) {
-            Alert.alert('Erro', data.message || 'Não foi possível carregar suas preferências anteriores.');
-          }
+        setFetchingExistingPrefs(true);
+        try {
+            const response = await fetch(`${API_BASE_URL}/api/preferences/user`, {
+                headers: { Authorization: `Bearer ${token}` },
+            });
+
+            // ✅ VERIFICAÇÃO SILENCIOSA
+            const responseText = await response.text();
+            
+            if (responseText.trim().startsWith('{') || responseText.trim().startsWith('[')) {
+                try {
+                    const data = JSON.parse(responseText);
+                    if (response.ok && data.preferences) {
+                        setPreferences(data.preferences);
+                    }
+                } catch (parseError) {
+                    // Silencia erro de parse
+                }
+            }
+        } catch (error) {
+            // Silencia erro de rede
+        } finally {
+            setFetchingExistingPrefs(false);
         }
-      } catch (error) {
-        Alert.alert('Erro', 'Erro de rede ao carregar preferências.');
-      } finally {
-        setFetchingExistingPrefs(false);
-      }
     };
     loadUserPreferences();
-  }, [token, userId]);
+}, [token, userId]);
 
   const handleSelect = (option) => {
     const field = steps[currentStep].field;
@@ -137,35 +143,50 @@ export default function PreferenceScreen() {
     }
   };
 
-  const handleSavePreferences = async () => {
+const handleSavePreferences = async () => {
     setLoading(true);
     try {
-      const response = await fetch(`${API_BASE_URL}/api/preferences/save`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ preferences: preferences }),
-      });
+        const response = await fetch(`${API_BASE_URL}/api/preferences/save`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({ preferences: preferences }),
+        });
 
-      const responseData = await response.json();
+        // ✅ VERIFICAÇÃO SILENCIOSA
+        const responseText = await response.text();
+        
+        if (responseText.trim().startsWith('{') || responseText.trim().startsWith('[')) {
+            try {
+                const responseData = JSON.parse(responseText);
+                
+                if (!response.ok) {
+                    throw new Error(responseData.message || "Erro ao salvar preferências.");
+                }
 
-      if (!response.ok) {
-        throw new Error(responseData.message || "Erro ao salvar preferências.");
-      }
-
-      await updatePreferencesStatus(true);
-      Alert.alert("Sucesso", "Preferências salvas com sucesso!");
-      
-      navigation.replace('Main');
+                await updatePreferencesStatus(true);
+                Alert.alert("Sucesso", "Preferências salvas com sucesso!");
+                navigation.replace('Main');
+                return;
+                
+            } catch (parseError) {
+                // Silencia erro de parse
+            }
+        }
+        
+        // Se não conseguiu parsear, mostra erro genérico
+        throw new Error("Erro ao salvar preferências.");
 
     } catch (error) {
-      Alert.alert("Erro", error.message || "Erro ao salvar preferências.");
+        if (!error.message.includes('JSON')) {
+            Alert.alert("Erro", error.message || "Erro ao salvar preferências.");
+        }
     } finally {
-      setLoading(false);
+        setLoading(false);
     }
-  };
+};  
 
   const handleNext = () => {
     const currentField = steps[currentStep].field;

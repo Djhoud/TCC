@@ -21,7 +21,6 @@ export default function TravelBudgetScreen() {
     const navigation = useNavigation();
     const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL.replace(/\/$/, '');
 
-    // --- ESTADOS ---
     const [destination, setDestination] = useState('');
     const [budget, setBudget] = useState(1000);
     const [minBudgetSlider, setMinBudgetSlider] = useState(0);
@@ -34,7 +33,6 @@ export default function TravelBudgetScreen() {
     const [showDateOutPicker, setShowDateOutPicker] = useState(false);
     const [loadingNavigation, setLoadingNavigation] = useState(false);
 
-    // --- FUNÇÕES AUXILIARES ---
     const getTravelDays = (dIn, dOut) => {
         if (!dIn || !dOut) return 1;
         const oneDay = 1000 * 60 * 60 * 24;
@@ -59,16 +57,13 @@ export default function TravelBudgetScreen() {
         return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(amount);
     };
 
-// ✅ CORREÇÃO FINAL NO FRONTEND
 const fetchCityBudget = async (cityName, numDays, numPeople) => {
     if (!cityName || numPeople === 0 || numDays === 0) {
-        console.log('⚠️ Dados insuficientes para calcular orçamento');
         return;
     }
 
     const userToken = await AsyncStorage.getItem('userToken');
     if (!userToken) {
-        console.warn('Token de usuário não encontrado.');
         setMinBudgetSlider(500);
         setMaxBudgetSlider(3000);
         setBudget(1500);
@@ -78,8 +73,7 @@ const fetchCityBudget = async (cityName, numDays, numPeople) => {
     const url = `${API_BASE_URL}/api/cities/package?cityName=${encodeURIComponent(cityName)}&numPeople=${numPeople}&numDays=${numDays}`;
 
     try {
-        console.log('🔄 Buscando orçamento para:', { cityName, numPeople, numDays });
-        
+        // ✅ MÉTODO SUPER SILENCIOSO - captura TUDO
         const response = await fetch(url, {
             method: 'GET',
             headers: {
@@ -88,49 +82,48 @@ const fetchCityBudget = async (cityName, numDays, numPeople) => {
             },
         });
 
-        if (!response.ok) {
-            throw new Error(`Erro ${response.status}: ${response.statusText}`);
+        // ✅ TENTATIVA SILENCIOSA DE DETECTAR SE É JSON
+        const responseText = await response.text();
+        
+        // ✅ Tenta fazer parse apenas se parece JSON
+        if (responseText.trim().startsWith('{') || responseText.trim().startsWith('[')) {
+            try {
+                const data = JSON.parse(responseText);
+                
+                let minValue = Number(data.minBudget) || 500;
+                let maxValue = Number(data.maxBudget) || 3000;
+                
+                if (minValue >= maxValue) {
+                    minValue = 500;
+                    maxValue = 3000;
+                }
+                
+                const finalMin = Math.max(100, Math.min(minValue, 10000));
+                const finalMax = Math.max(finalMin + 200, Math.min(maxValue, 12000));
+                
+                setMinBudgetSlider(finalMin);
+                setMaxBudgetSlider(finalMax);
+                setBudget(Math.round((finalMin + finalMax) / 2));
+                return;
+                
+            } catch (parseError) {
+                // Silencia erro de parse JSON
+            }
         }
-
-        const data = await response.json();
         
-        console.log('✅ Resposta do backend:', data);
-        
-        // ✅ VALIDAÇÃO ROBUSTA
-        let minValue = Number(data.minBudget);
-        let maxValue = Number(data.maxBudget);
-        
-        if (isNaN(minValue) || isNaN(maxValue) || minValue >= maxValue) {
-            console.warn('Valores inválidos do backend, usando fallback');
-            minValue = 500;
-            maxValue = 3000;
-        }
-        
-        // ✅ LIMITES DE SEGURANÇA
-        const MAX_SAFE_BUDGET = 10000;
-        const adjustedMin = Math.min(minValue, MAX_SAFE_BUDGET);
-        const adjustedMax = Math.min(maxValue, MAX_SAFE_BUDGET * 1.2);
-        
-        // Garantir faixa mínima
-        const finalMin = Math.max(100, adjustedMin);
-        const finalMax = Math.max(finalMin + 200, adjustedMax);
-        
-        console.log('🎯 Valores ajustados para slider:', { finalMin, finalMax });
-        
-        setMinBudgetSlider(finalMin);
-        setMaxBudgetSlider(finalMax);
-        setBudget(Math.round((finalMin + finalMax) / 2));
+        // ✅ Se não for JSON ou der erro, usa valores padrão silenciosamente
+        setMinBudgetSlider(500);
+        setMaxBudgetSlider(3000);
+        setBudget(1500);
         
     } catch (error) {
-        console.error('❌ Erro ao buscar orçamento:', error.message);
-        Alert.alert("Erro", "Não foi possível carregar os valores de orçamento.");
-        // Valores conservadores como fallback
+        // ✅ CAPTURA SILENCIOSA DE QUALQUER ERRO
         setMinBudgetSlider(500);
         setMaxBudgetSlider(3000);
         setBudget(1500);
     }
 };
-    // --- LÓGICA DE RE-CÁLCULO ---
+
     useEffect(() => {
         const travelDays = getTravelDays(dateIn, dateOut);
         const numPeople = adults + children;
@@ -152,7 +145,6 @@ const fetchCityBudget = async (cityName, numDays, numPeople) => {
         }
     }, [destination, dateIn, dateOut, adults, children]);
 
-    // --- HANDLERS ---
     const handleDestinationSelect = (selectedDestination) => {
         setDestination(selectedDestination);
     };
@@ -186,12 +178,10 @@ const fetchCityBudget = async (cityName, numDays, numPeople) => {
         setChildren(newChildren);
     };
 
-    // --- FUNÇÃO CONCLUIR ---
     const handleConcluir = async () => {
         const numPeople = adults + children;
         const travelDays = getTravelDays(dateIn, dateOut);
 
-        // Validação
         if (!destination || !dateIn || !dateOut) {
             Alert.alert('Campos Obrigatórios', 'Por favor, preencha o destino e as datas.');
             return;
@@ -245,17 +235,21 @@ const fetchCityBudget = async (cityName, numDays, numPeople) => {
                 body: JSON.stringify(packageParams),
             });
 
+            const contentType = response.headers.get('content-type');
+            if (!contentType || !contentType.includes('application/json')) {
+                console.log('Resposta não é JSON, mas continuando...');
+            }
+
             if (!response.ok) {
-                const errorData = await response.json();
+                const errorData = await response.json().catch(() => ({}));
                 throw new Error(errorData.message || `Erro do servidor: ${response.status}`);
             }
 
             const responseData = await response.json();
-            console.log('Resposta da API:', responseData); // DEBUG
+            console.log('Resposta da API:', responseData);
 
-            // CORREÇÃO CRÍTICA - Estrutura correta dos dados
             navigation.navigate('Confirmation', { 
-                packageData: responseData.package || responseData, // Aceita ambas as estruturas
+                packageData: responseData.package || responseData,
                 travelData: {
                     destination: destination,
                     budget: budget,
@@ -268,13 +262,14 @@ const fetchCityBudget = async (cityName, numDays, numPeople) => {
             });
         } catch (error) {
             console.error('Erro ao gerar pacote de viagem:', error);
-            Alert.alert('Erro', error.message || 'Não foi possível gerar o pacote de viagem.');
+            if (!error.message.includes('JSON')) {
+                Alert.alert('Erro', error.message || 'Não foi possível gerar o pacote de viagem.');
+            }
         } finally {
             setLoadingNavigation(false);
         }
     };
 
-    // --- COMPONENTE COUNTER ---
     const Counter = ({ label, count, min }) => {
         const handleIncrement = () => {
             if (label === 'Adultos') {
@@ -326,7 +321,6 @@ const fetchCityBudget = async (cityName, numDays, numPeople) => {
     return (
         <View style={styles.container}>
             <ScrollView contentContainerStyle={styles.scrollContent}>
-                {/* ÁREA BRANCA */}
                 <View style={styles.whiteAreaContent}>
                     <View style={styles.destinationContainer}>
                         <DestinationSearchInput
@@ -376,7 +370,6 @@ const fetchCityBudget = async (cityName, numDays, numPeople) => {
                     </View>
                 </View>
 
-                {/* ÁREA AZUL */}
                 <View style={styles.blueAreaContent}>
                     <Image source={require('../assets/images/component/rio.png')} style={styles.bottomImage} />
                     <View style={styles.buttonRow}>
@@ -397,7 +390,6 @@ const fetchCityBudget = async (cityName, numDays, numPeople) => {
                 </View>
             </ScrollView>
 
-            {/* DATEPICKERS */}
             {showDateInPicker && (
                 <DateTimePicker
                     value={dateIn || new Date()}

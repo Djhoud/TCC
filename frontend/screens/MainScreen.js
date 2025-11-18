@@ -77,20 +77,27 @@ const styles = StyleSheet.create({
   },
   button: {
     marginTop: 40,
-    backgroundColor: "#3A8FFF", // Cor chamativa do botão
+    backgroundColor: "#3A8FFF",
     paddingVertical: 15,
     paddingHorizontal: 40,
     borderRadius: 10,
     borderLeftWidth: 3,
     borderRightWidth: 3,
     borderBottomWidth: 5,
-    boxShadow: '1px 5px 0px 4px #1D4780',
-    borderColor: '#2E72CC', // Cor da borda interna
-    alignItems: 'center', // Alinha o texto no centro
-    justifyContent: 'center', // Centraliza o texto no botão
-    transition: 'background-color 0.3s ease', // Animação suave da cor de fundo
+    borderColor: '#2E72CC',
+    alignItems: 'center',
+    justifyContent: 'center',
     zIndex: 2,
-  },
+    // ✅ CORRETO - React Native shadow properties
+    shadowColor: "#1D4780",
+    shadowOffset: {
+        width: 1,
+        height: 5,
+    },
+    shadowOpacity: 0.8,
+    shadowRadius: 0,
+    elevation: 8, // Para Android
+},
   buttonText: {
     color: "#fff", // Cor do texto
     fontWeight: "bold",

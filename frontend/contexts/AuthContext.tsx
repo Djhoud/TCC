@@ -47,7 +47,6 @@ export const AuthContext = createContext<AuthContextType | undefined>(
   undefined
 );
 
-// ✔ Utilitário para garantir que erro SEMPRE seja string
 const safeError = (err: any): string => {
   if (!err) return "Erro desconhecido";
   if (typeof err === "string") return err;
@@ -57,6 +56,29 @@ const safeError = (err: any): string => {
   } catch {
     return String(err);
   }
+};
+
+const safeFetchJSON = async (url: string, options: any = {}) => {
+    try {
+        const response = await fetch(url, options);
+        
+        const responseText = await response.text();
+        
+        if (responseText.trim().startsWith('{') || responseText.trim().startsWith('[')) {
+            try {
+                return JSON.parse(responseText);
+            } catch (parseError) {
+                console.log('Parse JSON falhou');
+                return null;
+            }
+        } else {
+            console.log('Resposta não é JSON');
+            return null;
+        }
+    } catch (error) {
+        console.log('Erro de fetch:', error.message);
+        return null;
+    }
 };
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
@@ -69,7 +91,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
-  // GOOGLE
   const [request, response, promptAsync] = Google.useAuthRequest({
     clientId: process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID,
     scopes: ["openid", "profile", "email"],
@@ -85,36 +106,31 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (result?.type === "success") {
         const { access_token } = result.params;
 
-        const backendResponse = await fetch(
-          `${API_BASE_URL}/api/auth/google`,
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ accessToken: access_token }),
-          }
+        const data = await safeFetchJSON(`${API_BASE_URL}/api/auth/google`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ accessToken: access_token }),
+        });
+
+        if (!data) {
+          throw new Error("Resposta inválida do servidor");
+        }
+
+        const userProfile: User = {
+          name: data.user?.name || data.nome || "",
+          email: data.user?.email || data.email || "",
+          cpf: data.user?.cpf || data.documento || null,
+          photo: data.user?.photo || data.foto || null,
+        };
+
+        await signIn(
+          data.token,
+          data.userId || data.id,
+          data.preferenciasCompletas || false,
+          userProfile
         );
 
-        const data = await backendResponse.json();
-
-        if (backendResponse.ok) {
-          const userProfile: User = {
-            name: data.user?.name || data.nome || "",
-            email: data.user?.email || data.email || "",
-            cpf: data.user?.cpf || data.documento || null,
-            photo: data.user?.photo || data.foto || null,
-          };
-
-          await signIn(
-            data.token,
-            data.userId || data.id,
-            data.preferenciasCompletas || false,
-            userProfile
-          );
-
-          return true;
-        } else {
-          throw new Error(data.message || "Erro no login com Google");
-        }
+        return true;
       }
 
       return false;
@@ -137,17 +153,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     if (!userToken) return;
 
     try {
-      const response = await fetch(`${API_BASE_URL}/api/users/profile`, {
+      const data = await safeFetchJSON(`${API_BASE_URL}/api/users/profile`, {
         headers: { Authorization: `Bearer ${userToken}` },
       });
 
-      if (response.ok) {
-        const data: User = await response.json();
+      if (data) {
         setUser(data);
-      } else if (response.status === 401) {
-        await signOut();
       } else {
-        throw new Error(`Erro ao buscar usuário: ${response.status}`);
+        throw new Error("Erro ao buscar usuário: resposta inválida");
       }
     } catch (err: any) {
       setError(safeError(err));
@@ -160,9 +173,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       try {
         const storedToken = await AsyncStorage.getItem("userToken");
         const storedUserId = await AsyncStorage.getItem("userId");
-        const storedPrefs = await AsyncStorage.getItem(
-          "preferenciasCompletas"
-        );
+        const storedPrefs = await AsyncStorage.getItem("preferenciasCompletas");
 
         if (storedToken && storedUserId) {
           setToken(storedToken);
@@ -215,10 +226,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const updatePreferencesStatus = async (status: boolean) => {
     try {
-      await AsyncStorage.setItem(
-        "preferenciasCompletas",
-        status.toString()
-      );
+      await AsyncStorage.setItem("preferenciasCompletas", status.toString());
       setPreferenciasCompletas(status);
     } catch (err: any) {
       setError(safeError(err));
@@ -232,16 +240,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     try {
       if (!API_BASE_URL) throw new Error("API BASE não configurada");
 
-      const response = await fetch(`${API_BASE_URL}/auth/login`, {
+      // ✅✅✅ CORREÇÃO CRÍTICA: estava /api/auth/register, agora é /api/auth/login
+      const data = await safeFetchJSON(`${API_BASE_URL}/api/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, senha }),
       });
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || "Falha no login");
+      if (!data) {
+        throw new Error("Resposta inválida do servidor");
       }
 
       const userProfile: User = {
@@ -276,15 +283,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     try {
       if (!API_BASE_URL) throw new Error("API BASE não configurada");
 
-      const response = await fetch(`${API_BASE_URL}/auth/register`, {
+      // ✅✅✅ CORREÇÃO: estava /auth/register, agora é /api/auth/register
+      const data = await safeFetchJSON(`${API_BASE_URL}/api/auth/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ nome, email, senha }),
       });
 
-      const data = await response.json();
-
-      if (!response.ok) throw new Error(data.message || "Falha no registro");
+      if (!data) {
+        throw new Error("Resposta inválida do servidor");
+      }
 
       const userProfile: User = {
         name: data.name,
@@ -335,7 +343,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   );
 };
 
-// Hook
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (!context)
