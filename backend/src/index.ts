@@ -25,7 +25,8 @@ app.use(express.json());
 app.use('/api/alternatives', verifyToken, alternativeRoutes);
 
 // Rotas de autenticação (sem proteção)
-app.use('/auth', authRoutes);
+app.use('/api/auth', authRoutes);
+
 
 // Rotas protegidas por verifyToken
 app.use('/api/users', profileRoutes);
