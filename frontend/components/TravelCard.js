@@ -1,6 +1,8 @@
+// components/TravelCard.js
 import { FontAwesome5 } from '@expo/vector-icons';
 import React from 'react';
 import { Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import CardClouds from './CardClouds';
 
 const formatCurrency = (amount) => {
     if (!amount || isNaN(amount)) return 'R$ 0,00';
@@ -49,12 +51,17 @@ export default function TravelCard({ travel, onPress }) {
 
     return (
         <TouchableOpacity style={styles.card} onPress={onPress}>
+            {/* 1. IMAGEM - ATRÁS DE TUDO */}
             <Image 
                 source={{ uri: imageUrl }} 
                 style={styles.cardImage}
                 defaultSource={{ uri: 'https://images.unsplash.com/photo-1488646953014-85cb44e25828' }}
             />
             
+            {/* 2. NUVENS - NA FRENTE DA IMAGEM, ATRÁS DO CONTEÚDO */}
+            <CardClouds />
+            
+            {/* 3. CONTEÚDO - NA FRENTE DE TUDO */}
             <View style={styles.cardContent}>
                 <View style={styles.cardHeader}>
                     <Text style={styles.cardTitle} numberOfLines={1}>
@@ -102,7 +109,7 @@ export default function TravelCard({ travel, onPress }) {
 
 const styles = StyleSheet.create({
     card: {
-        backgroundColor: '#fff',
+        backgroundColor: '#ffffffff',
         borderRadius: 16,
         marginBottom: 16,
         shadowColor: '#000',
@@ -114,14 +121,18 @@ const styles = StyleSheet.create({
         shadowRadius: 3.84,
         elevation: 5,
         overflow: 'hidden',
+        position: 'relative',
     },
     cardImage: {
         width: '100%',
         height: 140,
         backgroundColor: '#f0f0f0',
+        // zIndex implícito mais baixo
     },
     cardContent: {
         padding: 16,
+        position: 'relative',
+        zIndex: 10, // CONTEÚDO NA FRENTE DAS NUVENS
     },
     cardHeader: {
         flexDirection: 'row',

@@ -1,6 +1,7 @@
+import { FontAwesome5 } from '@expo/vector-icons'; // Importar ícones
 import { useNavigation } from "@react-navigation/native";
 import { FlatList, Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import CloudBackReverse from "../components/CloudBackReverse"; // Verifica se o caminho está correto
+import CloudBackReverse from "../components/CloudBackReverse";
 import Navbar from "../components/Navbar";
 
 export default function MainScreen() {
@@ -10,7 +11,7 @@ export default function MainScreen() {
   const travelPackages = [
     {
       id: "1",
-      image: require("../assets/images/component/rio.png"), // Confirma que a imagem existe no caminho
+      image: require("../assets/images/component/rio.png"),
       title: "Rio de Janeiro",
       price: "R$2.999",
       description: "Explore o Rio de Janeiro com nosso pacote completo.",
@@ -30,11 +31,19 @@ export default function MainScreen() {
       <View style={styles.topArea}>
         <Text style={styles.title}>Sua viagem do seu jeito!</Text>
         <TouchableOpacity style={styles.button} onPress={() => navigation.navigate("Budget")}>
-  <Text style={styles.buttonText}>SUA VIAGEM!</Text>
-  </TouchableOpacity>
+          <Text style={styles.buttonText}>SUA VIAGEM!</Text>
+        </TouchableOpacity>
       </View>
       <View style={styles.bottomArea}>
-        <Text style={styles.sectionTitle}>PACOTES POPULARES</Text>
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>PACOTES POPULARES</Text>
+          <TouchableOpacity 
+            style={styles.circularButton}
+            onPress={() => navigation.navigate("PopularTravels")}
+          >
+            <FontAwesome5 name="arrow-right" size={20} color="#3A8FFF" />
+          </TouchableOpacity>
+        </View>
         <FlatList
           data={travelPackages}
           horizontal
@@ -62,7 +71,7 @@ const styles = StyleSheet.create({
     zIndex: 1,
   },
   topArea: {
-    height: "40%",  // Ajustando a altura para um valor menor
+    height: "40%",
     justifyContent: "center",
     alignItems: "center",
     backgroundColor: "#fff",
@@ -70,7 +79,7 @@ const styles = StyleSheet.create({
     zIndex: 1,
   },
   title: {
-    fontSize: 42,  // Mantendo o tamanho da fonte
+    fontSize: 42,
     fontWeight: "bold",
     color: "#3A8FFF",
     textAlign: "center",
@@ -88,7 +97,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     zIndex: 2,
-    // ✅ CORRETO - React Native shadow properties
     shadowColor: "#1D4780",
     shadowOffset: {
         width: 1,
@@ -96,28 +104,48 @@ const styles = StyleSheet.create({
     },
     shadowOpacity: 0.8,
     shadowRadius: 0,
-    elevation: 8, // Para Android
-},
+    elevation: 8,
+  },
   buttonText: {
-    color: "#fff", // Cor do texto
+    color: "#fff",
     fontWeight: "bold",
     fontSize: 20,
     textAlign: 'center',
-    zIndex:1, // Centraliza o texto
+    zIndex: 1,
   },
   bottomArea: {
-    height: "55%",  // Ajuste proporcional da área inferior
+    height: "55%",
     backgroundColor: "#3A8FFF",
     padding: 15,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 10,
+    marginTop: 33,
+    marginHorizontal: 10,
   },
   sectionTitle: {
     fontSize: 22,
     fontWeight: "bold",
     color: "#fff",
-    marginBottom: 10,
-    marginTop:33,
-    marginLeft: 10,
-    zIndex:5,
+    zIndex: 5,
+  },
+  circularButton: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: '#fff',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 3,
+    elevation: 5,
+    borderWidth: 2,
+    borderColor: '#f0f0f0',
   },
   card: {
     width: 220,

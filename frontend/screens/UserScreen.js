@@ -125,11 +125,13 @@ export default function ProfileScreen() {
           <LabeledInput label="Nome" value={user?.name || ''} />
           <LabeledInput label="E-mail" value={user?.email || ''} />
           <LabeledInput label="Senha" value="********" secureTextEntry />
-          <LabeledInput label="CPF" value={user?.cpf || ''} />
           
           {/* 🔥 BOTÕES LADO A LADO */}
           <View style={styles.buttonsRow}>
-            <TouchableOpacity style={styles.editButton}>
+            <TouchableOpacity 
+              style={styles.editButton}
+              onPress={() => navigation.navigate("Preference")} // ✅ AGORA LEVA PARA PREFERENCE
+            >
               <Text style={styles.editButtonText}>Editar Perfil</Text>
             </TouchableOpacity>
             
@@ -143,54 +145,53 @@ export default function ProfileScreen() {
         </>
       )
     },
-    // No ProfileScreen.js, atualize a parte do FlatList no key: "2"
-{
-    key: "2",
-    content: (
+    {
+      key: "2",
+      content: (
         <View style={{ flex: 1, padding: 20 }}>
-            <TextInput
-                placeholder="Buscar viagens..."
-                placeholderTextColor="#888"
-                style={{
-                    height: 50,
-                    borderWidth: 1,
-                    borderColor: "#ccc",
-                    borderRadius: 10,
-                    paddingHorizontal: 15,
-                    marginBottom: 15,
-                }}
-                value={searchQuery}
-                onChangeText={(text) => setSearchQuery(text)}
+          <TextInput
+            placeholder="Buscar viagens..."
+            placeholderTextColor="#888"
+            style={{
+              height: 50,
+              borderWidth: 1,
+              borderColor: "#ccc",
+              borderRadius: 10,
+              paddingHorizontal: 15,
+              marginBottom: 15,
+            }}
+            value={searchQuery}
+            onChangeText={(text) => setSearchQuery(text)}
+          />
+          
+          {loading ? (
+            <Text style={styles.loadingText}>Carregando histórico...</Text>
+          ) : (
+            <FlatList
+              data={travels.filter((t) =>
+                t.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                t.destination.toLowerCase().includes(searchQuery.toLowerCase())
+              )}
+              keyExtractor={(item) => item.id}
+              renderItem={({ item }) => (
+                <TouchableOpacity 
+                  onPress={() => navigation.navigate('PackageDetail', { package: item })}
+                >
+                  <TravelCard travel={item} />
+                </TouchableOpacity>
+              )}
+              contentContainerStyle={{ gap: 12, paddingBottom: 100 }}
+              showsVerticalScrollIndicator={false}
+              ListEmptyComponent={() => (
+                <Text style={styles.emptyHistoryText}>
+                  Nenhum histórico de viagem encontrado.
+                </Text>
+              )}
             />
-            
-            {loading ? (
-                <Text style={styles.loadingText}>Carregando histórico...</Text>
-            ) : (
-                <FlatList
-                    data={travels.filter((t) =>
-                        t.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                        t.destination.toLowerCase().includes(searchQuery.toLowerCase())
-                    )}
-                    keyExtractor={(item) => item.id}
-                    renderItem={({ item }) => (
-                        <TouchableOpacity 
-                            onPress={() => navigation.navigate('PackageDetail', { package: item })}
-                        >
-                            <TravelCard travel={item} />
-                        </TouchableOpacity>
-                    )}
-                    contentContainerStyle={{ gap: 12, paddingBottom: 100 }}
-                    showsVerticalScrollIndicator={false}
-                    ListEmptyComponent={() => (
-                        <Text style={styles.emptyHistoryText}>
-                            Nenhum histórico de viagem encontrado.
-                        </Text>
-                    )}
-                />
-            )}
+          )}
         </View>
-    ),
-}
+      ),
+    }
   ];
 
   return (
@@ -285,7 +286,7 @@ const styles = StyleSheet.create({
     borderWidth: 0.5
   },
   
-  // 🔥 NOVOS ESTILOS PARA BOTÕES LADO A LADO
+  // 🔥 BOTÕES LADO A LADO
   buttonsRow: {
     flexDirection: "row",
     justifyContent: "space-between",

@@ -3,6 +3,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import React from 'react';
 import { Alert, Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import ButtonClouds from '../components/ButtonClouds';
 import Navbar from '../components/Navbar';
 
 const formatCurrency = (amount) => {
@@ -21,7 +22,6 @@ export default function PackageDetailScreen() {
     const route = useRoute();
     const navigation = useNavigation();
     
-    // ✅ VERIFICAÇÃO DE SEGURANÇA - IMPORTANTE!
     if (!route.params?.package) {
         return (
             <View style={[styles.container, styles.centerContent]}>
@@ -38,7 +38,6 @@ export default function PackageDetailScreen() {
     
     const { package: travelPackage } = route.params;
 
-    // ✅ VERIFICAÇÃO ADICIONAL DA ESTRUTURA DO PACOTE
     if (!travelPackage || !travelPackage.id) {
         return (
             <View style={[styles.container, styles.centerContent]}>
@@ -68,7 +67,6 @@ export default function PackageDetailScreen() {
         }
     };
 
-    // ... resto do código permanece igual
     const getDefaultImage = (destination) => {
         const images = {
             'Rio de Janeiro': 'https://images.unsplash.com/photo-1483729558449-99ef09a8c325',
@@ -127,13 +125,11 @@ export default function PackageDetailScreen() {
                     style: 'destructive',
                     onPress: async () => {
                         try {
-                            // Remover do histórico
                             const existingHistory = await AsyncStorage.getItem('travelHistory');
                             let historyArray = existingHistory ? JSON.parse(existingHistory) : [];
                             historyArray = historyArray.filter(item => item.id !== travelPackage.id);
                             await AsyncStorage.setItem('travelHistory', JSON.stringify(historyArray));
 
-                            // Se for público, remover também dos públicos
                             if (travelPackage.isPublic) {
                                 const existingPublic = await AsyncStorage.getItem('publicPackages');
                                 let publicArray = existingPublic ? JSON.parse(existingPublic) : [];
@@ -153,53 +149,76 @@ export default function PackageDetailScreen() {
         );
     };
 
-    // ✅ COMPONENTE DE ITEM (somente leitura)
+    // ✅ NOVO COMPONENTE DE ITEM MODERNO
     const ReadOnlyItem = ({ item, type }) => {
-        const getIconName = (type) => {
-            const icons = {
-                accommodation: "hotel",
-                destinationTransport: "plane",
-                localTransport: "bus",
-                food: "utensils",
-                activity: "map-marker-alt",
-                interest: "heart",
-                event: "calendar"
-            };
-            return icons[type] || "map-marker-alt";
-        };
-
         const getItemTitle = (item, type) => {
             const titles = {
-                accommodation: `Hospedagem: ${item?.nome || 'Não especificada'}`,
-                destinationTransport: `Transporte: ${item?.tipo || 'Para Destino'}`,
-                localTransport: `Transporte: ${item?.tipo || 'Local'}`,
-                food: `Refeição: ${item?.tipo || 'Não especificada'}`,
-                activity: `Atividade: ${item?.nome || 'Não especificada'}`,
-                interest: `Interesse: ${item?.nome || 'Não especificada'}`,
-                event: `Evento: ${item?.nome || 'Não especificada'}`
+                accommodation: `${item?.nome || 'Hospedagem'}`,
+                destinationTransport: `${item?.tipo || 'Transporte'}`,
+                localTransport: `${item?.tipo || 'Transporte Local'}`,
+                food: `${item?.tipo || 'Refeição'}`,
+                activity: `${item?.nome || 'Atividade'}`,
+                interest: `${item?.nome || 'Interesse'}`,
+                event: `${item?.nome || 'Evento'}`
             };
             return titles[type] || 'Item';
         };
 
+        const getSubtitle = (item, type) => {
+            switch(type) {
+                case 'accommodation':
+                    return item?.endereco || item?.cidade || 'Local não especificado';
+                case 'destinationTransport':
+                case 'localTransport':
+                    return item?.descricao || 'Detalhes do transporte';
+                case 'food':
+                    return item?.descricao || 'Detalhes da refeição';
+                default:
+                    return item?.descricao || item?.categoria || 'Descrição não disponível';
+            }
+        };
+
+        const getLocation = (item, type) => {
+            if (item?.endereco) {
+                return item.endereco;
+            }
+            if (item?.cidade) {
+                return item.cidade;
+            }
+            if (item?.categoria) {
+                return item.categoria;
+            }
+            return 'Localização';
+        };
+
         return (
-            <View style={styles.itemContainer}>
-                <View style={styles.itemHeader}>
-                    <FontAwesome5 name={getIconName(type)} size={16} color="#1D4780" />
-                    <Text style={styles.itemTitle}>{getItemTitle(item, type)}</Text>
+            <View style={styles.modernItemContainer}>
+                <View style={styles.modernItemContent}>
+                    <View style={styles.modernItemHeader}>
+                        <Text style={styles.modernItemTitle}>
+                            {getItemTitle(item, type)}
+                        </Text>
+                        <View style={styles.locationBadge}>
+                            <FontAwesome5 name="map-marker-alt" size={10} color="#fff" />
+                            <Text style={styles.locationText}>
+                                {getLocation(item, type)}
+                            </Text>
+                        </View>
+                    </View>
+                    
+                    <Text style={styles.modernItemSubtitle}>
+                        {getSubtitle(item, type)}
+                    </Text>
+                    
+                    <View style={styles.modernItemFooter}>
+                        <Text style={styles.modernItemDates}>
+                            20/12/24 até 27/12/24
+                        </Text>
+                        <Text style={styles.modernItemTotal}>
+                           
+                        </Text>
+                    </View>
                 </View>
-                <Text style={styles.itemDetail}>Descrição: {item?.descricao || item?.endereco || item?.tipo || 'N/A'}</Text>
-                {item?.categoria && <Text style={styles.itemDetail}>Categoria: {item.categoria}</Text>}
-                {item?.cidade && <Text style={styles.itemDetail}>Cidade: {item.cidade}</Text>}
-                {item?.preco_diario && (
-                    <Text style={styles.itemDetail}>
-                        Preço diário: {formatCurrency(item.preco_diario)}
-                    </Text>
-                )}
-                {item?.preco && (
-                    <Text style={styles.itemDetail}>
-                        Preço: {formatCurrency(item.preco)}
-                    </Text>
-                )}
             </View>
         );
     };
@@ -261,7 +280,7 @@ export default function PackageDetailScreen() {
                     </Text>
                 </DetailCard>
 
-                {/* ITENS DO PACOTE */}
+                {/* ITENS DO PACOTE COM NOVO DESIGN */}
                 <DetailCard title="🏨 Hospedagem">
                     {items.accommodation ? (
                         <ReadOnlyItem item={items.accommodation} type="accommodation" />
@@ -311,34 +330,47 @@ export default function PackageDetailScreen() {
                         ))
                     ) : <Text style={styles.noDataText}>Eventos não incluídos.</Text>}
                 </DetailCard>
-
-                {/* BOTÕES DE AÇÃO */}
-                <View style={styles.actionArea}>
-                    <TouchableOpacity 
-                        style={[styles.actionButton, styles.travelAgainButton]}
-                        onPress={handleTravelAgain}
-                    >
-                        <FontAwesome5 name="redo" size={16} color="#fff" />
-                        <Text style={styles.buttonText}>Viajar Novamente</Text>
-                    </TouchableOpacity>
-                    
-                    <TouchableOpacity 
-                        style={[styles.actionButton, styles.deleteButton]}
-                        onPress={handleDelete}
-                    >
-                        <FontAwesome5 name="trash" size={16} color="#dc3545" />
-                        <Text style={[styles.buttonText, styles.deleteButtonText]}>Excluir</Text>
-                    </TouchableOpacity>
-                </View>
-            </ScrollView>
+<ButtonClouds />
+            // ✅ BOTÕES DE AÇÃO COM CONTAINER E NUVENS
+<View style={styles.footerContainer}>
+    {/* NUVENS NO FOOTER */}
+    
+    
+    <View style={styles.footerContent}>
+        <View style={styles.actionArea}>
+            <TouchableOpacity 
+                style={[styles.actionButton, styles.travelAgainButton]}
+                onPress={handleTravelAgain}
+            >
+                <FontAwesome5 name="redo" size={18} color="#fff" />
+                <Text style={styles.buttonText}>Viajar Novamente</Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity 
+                style={[styles.actionButton, styles.deleteButton]}
+                onPress={handleDelete}
+            >
+                <FontAwesome5 name="trash" size={18} color="#dc3545" />
+                <Text style={[styles.buttonText, styles.deleteButtonText]}>Excluir Pacote</Text>
+            </TouchableOpacity>
+        </View>
+    </View>
+</View>
+            </ScrollView> 
             <Navbar />
         </View>
     );
-}
-
+}     
 const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: '#f4f7f9' },
-    scrollContent: { paddingBottom: 100 },
+    container: { 
+        flex: 1, 
+        backgroundColor: '#3A8FFF',
+        zIndex: 1,
+        
+    },
+    scrollContent: { 
+        paddingBottom: 50 // Mais espaço para o footer
+    },
     centerContent: { 
         justifyContent: 'center', 
         alignItems: 'center',
@@ -409,7 +441,7 @@ const styles = StyleSheet.create({
         borderRadius: 15, 
         padding: 20, 
         marginHorizontal: 20,
-        marginBottom: 20, 
+        marginBottom: 40, 
         shadowColor: '#000', 
         shadowOffset: { width: 0, height: 2 }, 
         shadowOpacity: 0.1, 
@@ -425,36 +457,97 @@ const styles = StyleSheet.create({
         borderBottomColor: '#f8f9fa', 
         paddingBottom: 5 
     },
-    cardContent: { paddingHorizontal: 5 },
-    itemContainer: { 
-        marginBottom: 15, 
-        padding: 15,
-        backgroundColor: '#f8f9fa', 
-        borderRadius: 10,
-        borderLeftWidth: 4, 
-        borderLeftColor: '#3A8FFF',
+    cardContent: { 
+        paddingHorizontal: 5 
     },
-    itemHeader: { 
-        flexDirection: 'row', 
-        alignItems: 'center', 
-        marginBottom: 8 
+    
+    // ESTILOS PARA OS ITENS MODERNOS
+    modernItemContainer: {
+        backgroundColor: '#fff',
+        borderRadius: 12,
+        marginBottom: 12,
+        shadowColor: '#000',
+        shadowOffset: {
+            width: 0,
+            height: 2,
+        },
+        shadowOpacity: 0.1,
+        shadowRadius: 3,
+        elevation: 3,
+        borderWidth: 1,
+        borderColor: '#f0f0f0',
     },
-    itemTitle: { 
-        fontSize: 16, 
-        fontWeight: '600', 
-        color: '#1D4780', 
-        marginLeft: 8, 
-        flex: 1 
+    modernItemContent: {
+        padding: 16,
     },
-    itemDetail: { 
+    modernItemHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'flex-start',
+        marginBottom: 8,
+    },
+    modernItemTitle: {
+        fontSize: 16,
+        fontWeight: 'bold',
+        color: '#1a1a1a',
+        flex: 1,
+        marginRight: 10,
+    },
+    locationBadge: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#3A8FFF',
+        paddingHorizontal: 8,
+        paddingVertical: 4,
+        borderRadius: 6,
+        gap: 4,
+    },
+    locationText: {
+        fontSize: 12,
+        fontWeight: '600',
+        color: '#fff',
+    },
+    modernItemSubtitle: {
+        fontSize: 14,
+        color: '#666',
+        marginBottom: 12,
+        lineHeight: 18,
+    },
+    modernItemFooter: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        paddingTop: 12,
+        borderTopWidth: 1,
+        borderTopColor: '#f5f5f5',
+    },
+    modernItemDates: {
+        fontSize: 13,
+        color: '#888',
+        fontWeight: '500',
+    },
+    modernItemTotal: {
+        fontSize: 15,
+        fontWeight: 'bold',
+        color: '#28a745',
+    },
+    
+    noDataText: { 
         fontSize: 14, 
-        color: '#495057', 
-        marginLeft: 24, 
-        marginBottom: 3 
+        color: '#999', 
+        fontStyle: 'italic', 
+        textAlign: 'center' 
     },
-    noDataText: { fontSize: 14, color: '#999', fontStyle: 'italic', textAlign: 'center' },
-    summaryText: { fontSize: 15, color: '#495057', marginBottom: 8, lineHeight: 20 },
-    summaryLabel: { fontWeight: 'bold', color: '#1D4780' },
+    summaryText: { 
+        fontSize: 15, 
+        color: '#495057', 
+        marginBottom: 8, 
+        lineHeight: 20 
+    },
+    summaryLabel: { 
+        fontWeight: 'bold', 
+        color: '#1D4780' 
+    },
     totalCost: { 
         fontWeight: 'bold', 
         color: '#28a745', 
@@ -464,35 +557,56 @@ const styles = StyleSheet.create({
         borderTopWidth: 1,
         borderTopColor: '#f0f0f0',
     },
-    actionArea: { 
+    
+      footerContainer: {
+        backgroundColor: '#ffffffff',
+        borderTopLeftRadius: 25,
+        borderTopRightRadius: 25,
+        paddingTop: 30,
+        paddingBottom: 25,
+        paddingHorizontal: 20,
+        position: 'relative',
+        zIndex: 3, // Conteúdo do footer na frente das nuvens
+    },
+    
+    footerContent: {
+        paddingHorizontal: 20,
+        position: 'relative',
+        zIndex: 10,
+    },
+     actionArea: { 
         flexDirection: 'row', 
         justifyContent: 'space-between', 
-        marginTop: 30, 
-        marginBottom: 40,
-        paddingHorizontal: 20,
-        gap: 10,
+        gap: 12,
     },
     actionButton: { 
         flex: 1, 
-        paddingVertical: 15, 
+        paddingVertical: 14,
         borderRadius: 10, 
         alignItems: 'center',
         flexDirection: 'row',
         justifyContent: 'center',
         gap: 8,
-        elevation: 5,
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
+        shadowOpacity: 0.2,
+        shadowRadius: 3,
+        elevation: 4,
     },
     travelAgainButton: { 
         backgroundColor: '#3A8FFF',
     },
     deleteButton: { 
         backgroundColor: '#fff', 
-        borderWidth: 1, 
+        borderWidth: 2, 
         borderColor: '#dc3545',
+    },
+        footerWrapper: {
+        position: 'absolute',
+        bottom: 0,
+        left: 0,
+        right: 0,
+        zIndex: 5, // Footer na frente das nuvens
     },
     buttonText: { 
         fontSize: 16, 
@@ -500,6 +614,8 @@ const styles = StyleSheet.create({
         color: '#fff' 
     },
     deleteButtonText: { 
-        color: '#dc3545' 
+        color: '#dc3545',
+        fontSize: 16,
+        fontWeight: 'bold',
     },
 });

@@ -2,13 +2,15 @@
 import { createStackNavigator } from '@react-navigation/stack';
 import React from 'react';
 
-// Importe todas as suas telas (confirmando os nomes que você usou)
+// Importe todas as suas telas
 import CoffeeScreen from '../screens/CoffeeScreen';
 import ConfirmationScreen from '../screens/ConfirmationScreen';
 import LoginScreen from '../screens/LoginScreen';
 import MainScreen from '../screens/MainScreen';
 import PackageDetailScreen from '../screens/PackageDetailScreen';
+import PopularTravelsScreen from '../screens/PopularTravelsScreen';
 import PreferenceScreen from '../screens/PreferenceScreen';
+import ReadyPackageScreen from '../screens/ReadyPackageScreen'; // ✅ Import correto
 import RegisterScreen from '../screens/RegisterScreen';
 import SearchScreen from '../screens/SearchScreen';
 import TravelBudgetScreen from '../screens/TravelBudgetScreen';
@@ -35,7 +37,7 @@ const AppNavigator = ({ isAuthenticated, hasCompletedPreferences }: AppNavigator
     <Stack.Navigator
       screenOptions={{ headerShown: false }}
       initialRouteName={initialRouteName}
-      id={undefined} // <<<<<<<<<< Adicione esta linha de volta!
+      id={undefined}
     >
       {/* Telas de Autenticação e Cadastro (Públicas) */}
       <Stack.Screen name="Login" component={LoginScreen} />
@@ -47,9 +49,11 @@ const AppNavigator = ({ isAuthenticated, hasCompletedPreferences }: AppNavigator
       <Stack.Screen name="Budget" component={TravelBudgetScreen} />
       <Stack.Screen name="Confirmation" component={ConfirmationScreen} />
       <Stack.Screen name="Coffee" component={CoffeeScreen} />
+      <Stack.Screen name="ReadyPackage" component={ReadyPackageScreen} />
       <Stack.Screen name="Search" component={SearchScreen} />
       <Stack.Screen name="PackageDetail" component={PackageDetailScreen} />
       <Stack.Screen name="Profile" component={ProfileScreen} />
+      <Stack.Screen name="PopularTravels" component={PopularTravelsScreen} /> 
     </Stack.Navigator>
   );
 };

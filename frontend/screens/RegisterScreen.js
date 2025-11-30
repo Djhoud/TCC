@@ -1,6 +1,17 @@
-import { FontAwesome } from '@expo/vector-icons'; // 🔥 IMPORTAR ÍCONES
-import React, { useContext, useState } from 'react';
-import { ActivityIndicator, Alert, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { FontAwesome } from '@expo/vector-icons';
+import React, { useContext, useRef, useState } from 'react';
+import {
+  ActivityIndicator,
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View
+} from 'react-native';
 import CloudBackground from "../components/CloudBackground";
 import { AuthContext } from '../contexts/AuthContext';
 
@@ -8,12 +19,15 @@ export default function RegisterScreen({ navigation }) {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState(''); // 🔥 CAMPO CONFIRMAR SENHA
-  const [showPassword, setShowPassword] = useState(false); // 🔥 ESTADO PARA SENHA
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false); // 🔥 ESTADO PARA CONFIRMAR SENHA
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const { register, isLoading, error } = useContext(AuthContext);
 
-  // 🔥 FUNÇÕES PARA ALTERNAR VISUALIZAÇÃO DAS SENHAS
+  const emailRef = useRef(null);
+  const passwordRef = useRef(null);
+  const confirmPasswordRef = useRef(null);
+
   const toggleShowPassword = () => {
     setShowPassword(!showPassword);
   };
@@ -36,94 +50,120 @@ export default function RegisterScreen({ navigation }) {
     const success = await register(name, email, password);
     if (success) {
       Alert.alert('Sucesso', 'Conta criada e logada com sucesso!');
-    } else if (error) {
-      // Alert.alert('Erro no Registro', error);
     }
   };
 
   return (
-    <View style={styles.container}>
-      <CloudBackground />
-      <View style={styles.topArea}>
-        <Text style={styles.welcomeText}>Cadastre-se</Text>
-      </View>
-      <View style={styles.content}>
-        <TextInput
-          placeholder="Nome"
-          value={name}
-          onChangeText={setName}
-          style={styles.input}
-          placeholderTextColor="#666"
-        />
-        <TextInput
-          placeholder="Email"
-          value={email}
-          onChangeText={setEmail}
-          style={styles.input}
-          keyboardType="email-address"
-          autoCapitalize="none"
-          placeholderTextColor="#666"
-        />
+    <KeyboardAvoidingView 
+      style={styles.container}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 0}
+    >
+      <ScrollView 
+        contentContainerStyle={styles.scrollContainer}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+      >
+        {/* CloudBackground dentro do ScrollView para subir junto */}
+        <View style={styles.backgroundContainer}>
+          <CloudBackground />
+        </View>
         
-        {/* 🔥 CAMPO DE SENHA COM ÍCONE DE OLHO */}
-        <View style={styles.passwordContainer}>
+        <View style={styles.topArea}>
+          <Text style={styles.welcomeText}>Cadastre-se</Text>
+        </View>
+        <View style={styles.content}>
           <TextInput
-            placeholder="Senha"
-            value={password}
-            onChangeText={setPassword}
-            secureTextEntry={!showPassword}
-            style={styles.passwordInput}
+            placeholder="Nome"
+            value={name}
+            onChangeText={setName}
+            style={styles.input}
             placeholderTextColor="#666"
+            returnKeyType="next"
+            onSubmitEditing={() => emailRef.current?.focus()}
+            blurOnSubmit={false}
           />
-          <TouchableOpacity 
-            style={styles.eyeIcon}
-            onPress={toggleShowPassword}
-          >
-            <FontAwesome 
-              name={showPassword ? "eye-slash" : "eye"} 
-              size={20} 
-              color="#666" 
+          <TextInput
+            placeholder="Email"
+            value={email}
+            onChangeText={setEmail}
+            style={styles.input}
+            keyboardType="email-address"
+            autoCapitalize="none"
+            placeholderTextColor="#666"
+            returnKeyType="next"
+            ref={emailRef}
+            onSubmitEditing={() => passwordRef.current?.focus()}
+            blurOnSubmit={false}
+          />
+          
+          <View style={styles.passwordContainer}>
+            <TextInput
+              placeholder="Senha"
+              value={password}
+              onChangeText={setPassword}
+              secureTextEntry={!showPassword}
+              style={styles.passwordInput}
+              placeholderTextColor="#666"
+              returnKeyType="next"
+              ref={passwordRef}
+              onSubmitEditing={() => confirmPasswordRef.current?.focus()}
+              blurOnSubmit={false}
             />
+            <TouchableOpacity 
+              style={styles.eyeIcon}
+              onPress={toggleShowPassword}
+            >
+              <FontAwesome 
+                name={showPassword ? "eye-slash" : "eye"} 
+                size={20} 
+                color="#666" 
+              />
+            </TouchableOpacity>
+          </View>
+
+          <View style={styles.passwordContainer}>
+            <TextInput
+              placeholder="Confirmar Senha"
+              value={confirmPassword}
+              onChangeText={setConfirmPassword}
+              secureTextEntry={!showConfirmPassword}
+              style={styles.passwordInput}
+              placeholderTextColor="#666"
+              returnKeyType="done"
+              ref={confirmPasswordRef}
+              onSubmitEditing={handleRegister}
+            />
+            <TouchableOpacity 
+              style={styles.eyeIcon}
+              onPress={toggleShowConfirmPassword}
+            >
+              <FontAwesome 
+                name={showConfirmPassword ? "eye-slash" : "eye"} 
+                size={20} 
+                color="#666" 
+              />
+            </TouchableOpacity>
+          </View>
+
+          <TouchableOpacity style={styles.button} onPress={handleRegister} disabled={isLoading}>
+            {isLoading ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <Text style={styles.buttonText}>Registrar</Text>
+            )}
+          </TouchableOpacity>
+          
+          {error && <Text style={styles.errorMessage}>{error}</Text>}
+          
+          <TouchableOpacity onPress={() => navigation.navigate('Login')}>
+            <Text style={styles.link}>
+              <Text style={styles.linkBold}>Já tem conta? Fazer Login</Text>
+            </Text>
           </TouchableOpacity>
         </View>
-
-        {/* 🔥 CAMPO CONFIRMAR SENHA COM ÍCONE DE OLHO */}
-        <View style={styles.passwordContainer}>
-          <TextInput
-            placeholder="Confirmar Senha"
-            value={confirmPassword}
-            onChangeText={setConfirmPassword}
-            secureTextEntry={!showConfirmPassword}
-            style={styles.passwordInput}
-            placeholderTextColor="#666"
-          />
-          <TouchableOpacity 
-            style={styles.eyeIcon}
-            onPress={toggleShowConfirmPassword}
-          >
-            <FontAwesome 
-              name={showConfirmPassword ? "eye-slash" : "eye"} 
-              size={20} 
-              color="#666" 
-            />
-          </TouchableOpacity>
-        </View>
-
-        <TouchableOpacity style={styles.button} onPress={handleRegister} disabled={isLoading}>
-          {isLoading ? (
-            <ActivityIndicator color="#fff" />
-          ) : (
-            <Text style={styles.buttonText}>Registrar</Text>
-          )}
-        </TouchableOpacity>
-        {error && <Text style={styles.errorMessage}>{error}</Text>}
-        <TouchableOpacity onPress={() => navigation.navigate('Login')}>
-          <Text style={styles.link}>
-            <Text style={styles.linkBold}>Já tem conta? Fazer Login</Text>
-          </Text>
-        </TouchableOpacity>
-      </View>
-    </View>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 
@@ -131,11 +171,23 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+  scrollContainer: {
+    flexGrow: 1
+  },
+  backgroundContainer: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    zIndex: 1,
+  },
   topArea: {
-    height: "43%", 
+    height: 280,
     justifyContent: "center",
     alignItems: "center",
     backgroundColor: "#3A8FFF",
+    zIndex: 2,
   },
   welcomeText: {
     fontSize: 70,
@@ -143,13 +195,15 @@ const styles = StyleSheet.create({
     color: "#fff",
   },
   content: {
-    height: "57%",
+    flex: 1,
     backgroundColor: "#fff",
     paddingHorizontal: 40,
     alignItems: "center",
     justifyContent: "center",
+    paddingTop: 30,
+    paddingBottom: 50,
+    minHeight: 600,
     zIndex: 2,
-    paddingTop: 15,
   },
   input: {
     width: 320,
@@ -159,9 +213,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 15,
     borderColor: "#323D4D",
     borderWidth: 0.5,
-    marginTop: 5,
+    marginTop: 15,
   },
-  // 🔥 ESTILOS PARA OS CAMPOS DE SENHA COM ÍCONE
   passwordContainer: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -171,7 +224,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     borderColor: "#323D4D",
     borderWidth: 0.5,
-    marginTop: 5,
+    marginTop: 15,
   },
   passwordInput: {
     flex: 1,
@@ -183,7 +236,7 @@ const styles = StyleSheet.create({
     marginRight: 5,
   },
   button: {
-    marginTop: 40,
+    marginTop: 30,
     backgroundColor: "#1D4780",
     padding: 15,
     borderRadius: 15,

@@ -15,6 +15,7 @@ import {
 } from 'react-native';
 import BudgetSlider from '../components/BudgetSlider';
 import DestinationSearchInput from '../components/DestinationSearchInput';
+import MiddleClouds from '../components/MiddleClouds';
 import Navbar from '../components/Navbar';
 
 export default function TravelBudgetScreen() {
@@ -363,9 +364,10 @@ const fetchCityBudget = async (cityName, numDays, numPeople) => {
                                 minimumValue={minBudgetSlider}
                                 maximumValue={maxBudgetSlider}
                             />
-                            <Text style={styles.budgetRangeText}>
-                                Orçamento Estimado: {formatCurrency(minBudgetSlider)} a {formatCurrency(maxBudgetSlider)}
-                            </Text>
+                  <View style={styles.cloudsContainer}>
+            <MiddleClouds />
+        </View>
+                           
                         </View>
                     </View>
                 </View>
@@ -413,32 +415,163 @@ const fetchCityBudget = async (cityName, numDays, numPeople) => {
         </View>
     );
 }
-
 const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: '#fff' },
-    scrollContent: { paddingBottom: 20 },
-    whiteAreaContent: { paddingHorizontal: 20, paddingTop: 50, backgroundColor: '#fff', paddingBottom: 10 },
-    destinationContainer: { marginBottom: 20 },
-    inputRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 15 },
-    datePickerButton: { flex: 1, marginHorizontal: 5 },
-    peopleInput: { flex: 1, marginHorizontal: 5 },
-    dateLabel: { fontSize: 12, color: '#999', position: 'absolute', top: 5, left: 10, zIndex: 10 },
-    dateText: { fontSize: 16, color: '#343a40', marginTop: 8, textAlign: 'center' },
-    inputField: { backgroundColor: '#fff', borderWidth: 1, borderColor: '#ced4da', borderRadius: 8, padding: 12, alignItems: 'center', justifyContent: 'center', height: 50 },
-    counterContainer: { backgroundColor: '#fff', borderWidth: 1, borderColor: '#ced4da', borderRadius: 8, paddingTop: 12, paddingBottom: 5, alignItems: 'center', justifyContent: 'center', height: 50, position: 'relative' },
-    counterControl: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', width: '100%', paddingHorizontal: 10 },
-    counterButton: { padding: 5, borderRadius: 5 },
-    disabledButton: { opacity: 0.5 },
-    counterText: { fontSize: 16, fontWeight: '600', color: '#343a40' },
-    budgetSection: { paddingHorizontal: 5, marginTop: 10, marginBottom: 30 },
-    sliderWrapper: { alignItems: 'center', paddingHorizontal: 7, marginTop: 10 },
-    budgetRangeText: { fontSize: 14, color: '#6c757d', marginTop: 15, fontWeight: '500' },
-    blueAreaContent: { backgroundColor: '#3A8FFF', paddingHorizontal: 20, paddingBottom: 40, paddingTop: 50, borderTopLeftRadius: 50, borderTopRightRadius: 50, marginTop: -30 },
-    bottomImage: { width: '100%', height: 200, borderRadius: 15, marginBottom: 25, resizeMode: 'cover' },
-    buttonRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 20 },
-    actionButton: { flex: 1, paddingVertical: 15, borderRadius: 10, alignItems: 'center', marginHorizontal: 10, elevation: 5 },
-    editButton: { backgroundColor: '#fff', borderWidth: 1, borderColor: '#3A8FFF' },
-    editButtonText: { color: '#3A8FFF' },
-    concluirButton: { backgroundColor: '#1D4780' },
-    buttonText: { fontSize: 18, fontWeight: 'bold', color: '#fff' },
+    container: { 
+        flex: 1, 
+        backgroundColor: '#fff', 
+        zIndex:90,
+    },
+    scrollContent: { 
+        paddingBottom: 20 
+    },
+    whiteAreaContent: { 
+        paddingHorizontal: 20, 
+        paddingTop: 50, 
+        backgroundColor: '#fff', 
+        paddingBottom: 10, 
+        zIndex: 90,
+    },
+    destinationContainer: { 
+        marginBottom: 20 
+    },
+    inputRow: { 
+        flexDirection: 'row', 
+        justifyContent: 'space-between', 
+        marginBottom: 15,
+        zIndex: 10 ,
+    },
+    datePickerButton: { 
+        flex: 1, 
+        marginHorizontal: 5 
+    },
+    peopleInput: { 
+        flex: 1, 
+        marginHorizontal: 5 
+    },
+    dateLabel: { 
+        fontSize: 12, 
+        color: '#999', 
+        position: 'absolute', 
+        top: 5, 
+        left: 10, 
+        zIndex: 10 
+    },
+     cloudsContainer: {
+        position: 'relative',
+        width: '110%',
+        height: 10,
+        marginTop: 1,
+        marginBottom: 5,
+    },
+    dateText: { 
+        fontSize: 16, 
+        color: '#343a40', 
+        marginTop: 8, 
+        textAlign: 'center' 
+    },
+    inputField: { 
+        backgroundColor: '#fff', 
+        borderWidth: 1, 
+        borderColor: '#ced4da', 
+        borderRadius: 8, 
+        padding: 12, 
+        alignItems: 'center', 
+        justifyContent: 'center', 
+        height: 50,
+        zIndex: 5,
+    },
+    counterContainer: { 
+        backgroundColor: '#fff', 
+        borderWidth: 1, 
+        borderColor: '#ced4da', 
+        borderRadius: 8, 
+        paddingTop: 12, 
+        paddingBottom: 5, 
+        alignItems: 'center', 
+        justifyContent: 'center', 
+        height: 50, 
+        position: 'relative', 
+        zIndex: 5,
+    },
+    counterControl: { 
+        flexDirection: 'row', 
+        alignItems: 'center', 
+        justifyContent: 'space-between', 
+        width: '100%', 
+        paddingHorizontal: 10 
+    },
+    counterButton: { 
+        padding: 5, 
+        borderRadius: 5 
+    },
+    disabledButton: { 
+        opacity: 0.5 
+    },
+    counterText: { 
+        fontSize: 16, 
+        fontWeight: '600', 
+        color: '#343a40' 
+    },
+    budgetSection: { 
+        paddingHorizontal: 5, 
+        marginTop: 10, 
+        marginBottom: 30 
+    },
+    sliderWrapper: { 
+        alignItems: 'center', 
+        paddingHorizontal: 7, 
+        marginTop: 10 
+    },
+    budgetRangeText: { 
+        fontSize: 14, 
+        color: '#6c757d', 
+        marginTop: 15, 
+        fontWeight: '500' 
+    },
+    blueAreaContent: { 
+        backgroundColor: '#3A8FFF', 
+        paddingHorizontal: 20, 
+        paddingBottom: 40, 
+        paddingTop: 50, 
+        borderTopLeftRadius: 50, 
+        borderTopRightRadius: 50, 
+        marginTop: -30, 
+        zIndex: 1 
+    },
+    bottomImage: { 
+        width: '100%', 
+        height: 200, 
+        borderRadius: 15, 
+        marginBottom: 25, 
+        resizeMode: 'cover' 
+    },
+    buttonRow: { 
+        flexDirection: 'row', 
+        justifyContent: 'space-between', 
+        marginBottom: 20 
+    },
+    actionButton: { 
+        flex: 1, 
+        paddingVertical: 15, 
+        borderRadius: 10, 
+        alignItems: 'center', 
+        marginHorizontal: 10, 
+        elevation: 5 
+    },
+    editButton: { 
+        backgroundColor: '#fff', 
+        borderWidth: 1, 
+        borderColor: '#3A8FFF' 
+    },
+    editButtonText: { 
+        color: '#3A8FFF' 
+    },
+    concluirButton: { 
+        backgroundColor: '#1D4780' 
+    },
+    buttonText: { 
+        fontSize: 18, 
+        fontWeight: 'bold', 
+        color: '#fff' 
+    },
 });
